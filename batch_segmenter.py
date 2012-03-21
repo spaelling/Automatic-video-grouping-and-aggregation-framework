@@ -84,6 +84,8 @@ def main():
 			if not os.path.isfile('./DataSet/Metadata/%s' % (filename + '_metadata.txt')):
 				print 'adding %s to queue' % filename
 				queue.put(filename)
+			else:
+				os.system('rm ./DataSet/Inbox/%s' % (filename))
 	   
 		#wait on the queue until everything has been processed     
 		queue.join()

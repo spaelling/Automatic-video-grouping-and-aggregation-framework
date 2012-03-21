@@ -138,8 +138,8 @@ def getVideoMetadata(video_src, load_video=False):
 	# 	f.close()
 
 	# if metadata is non-existing then we need to load the video anyways
-	if not load_video and not metadata_exists:
-		print '%s not found, must load video...' % metadata_filename
+	# if not load_video and not metadata_exists:
+	# 	print '%s not found, must load video...' % metadata_filename
 	load_video = load_video or not metadata_exists
 	if load_video:
 		print 'loading video: %s' % video_src
@@ -162,6 +162,8 @@ def getVideoMetadata(video_src, load_video=False):
 		f.close()
 		return d,frames
 
+	fps = cv.GetCaptureProperty(cv.CaptureFromFile(video_src), cv.CV_CAP_PROP_FPS)
+
 	shift_vectors = []
 	# using a sliding window of 5 frames (avr. of 5 frames)
 	shift_vectors_sliding = []
@@ -169,8 +171,9 @@ def getVideoMetadata(video_src, load_video=False):
 	stand_dev = []
 	for i in range(0,len(frames)):
 
-		if i % (len(frames) / 10) == 0:
-			print '%2.2f%% of %s' % (100 * float(i) / float(len(frames)), video_src)
+		# print feedback every minute of data processed
+		if i % (fps * 60) == 0:
+			print '%2.1f%% of %s' % (100 * float(i) / float(len(frames)), video_src)
 			
 		stand_dev.append(math.sqrt(np.var(frames[i])))
 		# for i in range(0,25):
