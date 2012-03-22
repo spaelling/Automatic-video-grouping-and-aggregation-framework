@@ -289,7 +289,7 @@ def main(argv=None):
 	bookKeep = True
 	maxResults = 20
 	
-	try:
+	if True:
 		command = sys.argv[1]
 
 		if command == 'search' or command == 'download' or command == 'delete':
@@ -359,7 +359,7 @@ def main(argv=None):
 
 		else:
 			print help_message
-	except:
+	else:
 		print help_message
 	
 	return
