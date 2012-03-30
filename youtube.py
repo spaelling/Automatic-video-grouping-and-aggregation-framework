@@ -7,12 +7,16 @@ import sys
 import time
 import Queue
 import threading
+import string
 
 help_message = '''
-SEARCH:           youtube.py search [<tags>] [<categories>] [maxResult>]
-DOWNLOAD:         youtube.py download [<tags>] [<categories>] [maxResult>]
-BOOK KEEPING:     youtube.py book
-DELETE VIDEOS:    youtube.py delete [<tags>] [<categories>]
+SEARCH:            youtube.py search [<tags>] [<categories>] [maxResult>]
+DOWNLOAD:          youtube.py download [<tags>] [<categories>] [maxResult>]
+DELETE VIDEOS:     youtube.py delete [<tags>] [<categories>]
+ADVANCED SEARCH:   youtube.py asearch [<query>] [<requiredWordsInTitle>] [<tags>] [<categories>] [maxResult>]
+ADVANCED DOWNLOAD: youtube.py adownload [<query>] [<requiredWordsInTitle>] [<tags>] [<categories>] [maxResult>]
+ADVANCED DELETE:   youtube.py adownload [<query>] [<requiredWordsInTitle>] [<tags>] [<categories>]
+BOOK KEEPING:      youtube.py book
 '''
 
 datasetFactoryPath = './'
@@ -48,7 +52,7 @@ class MyThread(threading.Thread):
             #signals to queue job is done
 			self.queue.task_done()
 
-def searchForVideos(tags, categories, maxResults):
+def searchForVideos(_query, requiredInTitle, tags, categories, maxResults):
 
 	# Set additional parameters
 	apiVersion = '2'
@@ -57,6 +61,11 @@ def searchForVideos(tags, categories, maxResults):
 	orderBy = 'relevance'
 	safeSearch = 'none'
 	alt = 'json'
+
+	if _query:
+		query = '?q=' + _query.replace(' ', '+') + '&'
+	else:
+		query = '?'
 
 	# Format tags string
 	tagsStr = ''
@@ -72,7 +81,9 @@ def searchForVideos(tags, categories, maxResults):
 
 
 	# Do search on youtube
-	searchURL = 'https://gdata.youtube.com/feeds/api/videos?v=' + apiVersion + '&start-index=' + startIndex + '&max-results=' + maxNumberOfResults + '&orderby=' + orderBy + '&safeSearch=' + safeSearch + '&category=' + tagsStr + categoriesStr + '&alt=' + alt
+	searchURL = 'https://gdata.youtube.com/feeds/api/videos' + query + 'v=' + apiVersion + '&start-index=' + startIndex + '&max-results=' + maxNumberOfResults + '&orderby=' + orderBy + '&safeSearch=' + safeSearch + '&category=' + tagsStr + categoriesStr + '&alt=' + alt
+
+	print searchURL
 
 	response = urllib2.urlopen(searchURL)
 	resultString = response.read()
@@ -94,7 +105,17 @@ def searchForVideos(tags, categories, maxResults):
 		category = mediaGroup.get('media$category')[0].get('$t')
 
 		video = {'id':videoID, 'title': title, 'length':length, 'uploaded': uploadedTime, 'category': category, 'keywords':keywords}
-		videos.append(video)
+
+		if requiredInTitle and len(requiredInTitle) > 0:
+			allExists = True
+			for word in requiredInTitle:
+				if string.find(title, word) == -1:
+					allExists = False
+					break
+			if allExists:
+				videos.append(video)
+		else:
+			videos.append(video)
 
 	return videos
 
@@ -292,29 +313,49 @@ def main(argv=None):
 	if True:
 		command = sys.argv[1]
 
-		if command == 'search' or command == 'download' or command == 'delete':
+		if command == 'search' or command == 'download' or command == 'delete' or command == 'asearch' or command == 'adownload' or command == 'adelete':
 
-			tags = sys.argv[2].split(' ')
-			categories = sys.argv[3].split(' ')
+			videos = []
+			if command == 'search' or command == 'download' or command == 'delete':
 
-			if len(sys.argv) == 5:
-				maxResults = int(sys.argv[4])
-			else:
-				if not command == 'delete':
-					print 'Defaulting to maxResult = ' + str(maxResults)
+				tags = sys.argv[2].split(' ')
+				categories = sys.argv[3].split(' ')
 
-			# Search for videos
-			videos = searchForVideos(tags, categories, maxResults)
+				if len(sys.argv) == 5:
+					maxResults = int(sys.argv[4])
+				else:
+					if not command == 'delete':
+						print 'Defaulting to maxResult = ' + str(maxResults)
+
+				# Search for videos
+				videos = searchForVideos(None, None, tags, categories, maxResults)
+			
+			if command == 'asearch' or command == 'adownload' or command == 'adelete':
+
+				query = sys.argv[2]
+				requiredInTitle = sys.argv[3].split(' ')
+				tags = sys.argv[4].split(' ')
+				categories = sys.argv[5].split(' ')
+
+				if len(sys.argv) == 7:
+					maxResults = int(sys.argv[6])
+				else:
+					if not command == 'adelete':
+						print 'Defaulting to maxResult = ' + str(maxResults)
+
+				# Search for videos
+				videos = searchForVideos(query, requiredInTitle, tags, categories, maxResults)
+
 
 			# Bookkeep videos under these tags and categories
 			if bookKeep:
 				bookKeepVideos(videos, tags, categories)
 
-			if command == 'search':
+			if command == 'search' or command == 'asearch':
 				# Print a dump of the videos
 				print json.dumps(videos, sort_keys=True, indent=4) + '\nListed ' + str(len(videos)) +' results\n'
 
-			if command == 'download':
+			if command == 'download' or command == 'adownload':
 				# Download the videos
 				print 'Attempting to download ' + str(len(videos)) + ' videos:\n'
 
@@ -333,7 +374,7 @@ def main(argv=None):
 				#wait on the queue until everything has been processed     
 				queue.join()
 
-			if command == 'delete':
+			if command == 'delete' or command == 'adelete':
 
 				# Delete all these videos
 				deleteVideos(videos)
