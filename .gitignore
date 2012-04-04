@@ -1,5 +1,6 @@
 DataSet/Originals
 DataSet/Converted
 DataSet/Inbox
-bookkeeping.json
+DataSet/Cut/*.avi
+DataSet/Cut/*.m4v
 .DS_Store

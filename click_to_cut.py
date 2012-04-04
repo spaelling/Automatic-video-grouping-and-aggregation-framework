@@ -6,6 +6,7 @@ import video
 from common import anorm2, draw_str
 import time
 import sys
+import os
 
 # Find a JSON parser
 try:
@@ -19,45 +20,71 @@ except ImportError:
     	print 'ERROR: JSON parser not found!'
 
 help_message = '''
-USAGE: keypress2.py <video_source>'''
+USAGE: keypress2.py <video_source> [-?]
+-o to override saved cuts
+'''
 
 def main():
+	argv = sys.argv
 	try:
-		video_src = sys.argv[1]
+		video_src = argv[1]
 	except:
 		print help_message
 		return
 
-	cap = video.create_capture(video_src)
+	override = True if len(argv) > 2 and argv[2] == '-o' else False
+	cuts_filename = '%s_cuts.txt' % video_src
+
+	if override:
+		os.remove(cuts_filename)
+
+	cut_indexes = []
+	if os.path.isfile(cuts_filename):
+		f = open(cuts_filename,'r')
+		content = f.read()
+		d = json.loads(content)
+		cut_indexes = d.get('cut_indexes', [])
+
+	
 	capture = cv.CaptureFromFile(video_src)
 	fps = cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FPS)
 
-	human_delay = int(60.0 / fps) # 100 ms
-	index = 0
-	cut_indexes = []
-	while True:
+	if not cut_indexes:
+		cap = video.create_capture(video_src)
+		human_delay = int(60.0 / fps) # X ms
+		index = 0
+		while True:
 
-		ret, frame = cap.read()
-		if ret:
-			
-			ch = cv2.waitKey(int(1000/fps))
+			ret, frame = cap.read()
+			if ret:
+				
+				ch = cv2.waitKey(int(1000/fps))
 
-			if ch != -1: # key pressed
-				# do cut
-				cut_index = max(0, index-human_delay)
-				cut_indexes.append(cut_index)
-				print 'cut at frame #%d: %2.2f' % (cut_index, cut_index * fps / 1000.0)
+				if ch != -1: # key pressed
+					# do cut
+					cut_index = max(0, index-human_delay)
+					cut_indexes.append(cut_index)
+					print 'cut at frame #%d: %2.2f' % (cut_index, cut_index * fps / 1000.0)
 
-			draw_str(frame, (20, 20), 'frame #%d: %2.2f' % (index, index * fps / 1000.0))
-			cv2.imshow('', frame)
+				draw_str(frame, (20, 20), 'frame #%d: %2.2f' % (index, index * fps / 1000.0))
+				cv2.imshow('', frame)
 
-			index += 1
-		else:
-			# no more frames...
-			break
+				index += 1
+			else:
+				# no more frames...
+				break
+
+		d = {'cut_indexes' : cut_indexes}
+		content = json.dumps(d)
+
+		# do not write a file if json parser fails
+		if content:
+			# write to disc
+			f = open(cuts_filename,'w')	
+			f.write(content)
+			f.close()
 
 	part = 0
-	capture = cv.CaptureFromFile(video_src)
 	fourcc = cv.CV_FOURCC('D','I','V','3') # MPEG-4.3
 	width = int(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_WIDTH))
 	height =  int(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_HEIGHT))
@@ -65,7 +92,7 @@ def main():
 	index = 0
 	frame_offset = int(fps/4.0)
 	for cut_index in cut_indexes:
-		writer = cv.CreateVideoWriter("./cut/%s_part%d.avi" % (video_src.split('.')[-2], part), fourcc, fps, frame_size, 1)
+		writer = cv.CreateVideoWriter("./%s_part%d.avi" % (video_src.split('.')[-2], part), fourcc, fps, frame_size, 1)
 		for i in range(index, cut_index - frame_offset):
 			frame = cv.QueryFrame(capture)
 			cv.WriteFrame(writer, frame)
