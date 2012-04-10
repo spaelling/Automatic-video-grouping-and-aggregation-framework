@@ -48,11 +48,15 @@ def main():
 	
 	capture = cv.CaptureFromFile(video_src)
 	fps = cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FPS)
+	num_frames = float(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_COUNT))
+	# t = np.linspace(0, num_frames/fps, num_frames)
 
 	if not cut_indexes:
 		cap = video.create_capture(video_src)
 		human_delay = int(60.0 / fps) # X ms
 		index = 0
+		# show cut across the screen for this many frames
+		countdown = 0
 		while True:
 
 			ret, frame = cap.read()
@@ -64,9 +68,14 @@ def main():
 					# do cut
 					cut_index = max(0, index-human_delay)
 					cut_indexes.append(cut_index)
-					print 'cut at frame #%d: %2.2f' % (cut_index, cut_index * fps / 1000.0)
-
-				draw_str(frame, (20, 20), 'frame #%d: %2.2f' % (index, index * fps / 1000.0))
+					countdown = 15
+					# print 'cut at frame #%d: %2.2f' % (cut_index, cut_index * fps / 1000.0)
+					
+				if countdown > 0:
+					draw_str(frame, (320, 180), 'CUT')
+					countdown -= 1
+				
+				draw_str(frame, (20, 20), 'frame #%d: %2d:%02d -- %2.2f%%' % (index, int((index / fps) / 60), int((index / fps) % 60), 100.0 * index / num_frames))
 				cv2.imshow('', frame)
 
 				index += 1
@@ -92,16 +101,28 @@ def main():
 	index = 0
 	frame_offset = int(fps/4.0)
 	for cut_index in cut_indexes:
-		writer = cv.CreateVideoWriter("./%s_part%d.avi" % (video_src.split('.')[-2], part), fourcc, fps, frame_size, 1)
+		# print '%d -> %d' % (index, cut_index - frame_offset)
+		writer = cv.CreateVideoWriter("./%s_part%03d.avi" % (video_src.split('.')[-2], part), fourcc, fps, frame_size, 1)
 		for i in range(index, cut_index - frame_offset):
 			frame = cv.QueryFrame(capture)
 			cv.WriteFrame(writer, frame)
 			index += 1
+
 		# skip "frame_offset" frames on each side of the cut
 		for i in range(index, index + 2 * frame_offset):
 			frame = cv.QueryFrame(capture)
 			index += 1
 		part += 1
+
+	# print 'writing last part'
+	writer = cv.CreateVideoWriter("./%s_part%03d.avi" % (video_src.split('.')[-2], part), fourcc, fps, frame_size, 1)
+	while True:
+		try:
+			frame = cv.QueryFrame(capture)
+			cv.WriteFrame(writer, frame)
+		except Exception as e:
+			# print e
+			break
 
 if __name__ == '__main__':
     main()

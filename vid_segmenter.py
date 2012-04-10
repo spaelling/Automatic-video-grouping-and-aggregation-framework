@@ -26,7 +26,7 @@ except ImportError:
 DEBUG = False
 
 help_message = '''
-USAGE: vid_segmenter.py <video_source> [<show_plot>] [<show_video>]'''
+USAGE: vid_segmenter.py <video_source>'''
 
 def computeFrameState(magnitudes, contrast):
 	
@@ -128,14 +128,15 @@ def getVideoMetadata(video_src, load_video=False):
 	metadata_filename = video_src + '_metadata.txt'
 	metadata_exists = os.path.isfile(metadata_filename)
 
-	# if os.path.isfile(metadata_filename + '.part'):
-	# 	print '%s is already processing...' % video_src
-	# 	return dict()
-
-	# # "flag" the video as processing
-	# if not metadata_exists:		
-	# 	f = open(metadata_filename + '.part','w')
-	# 	f.close()
+	filename = video_src.split('/')[-1]
+	# print filename
+	if not metadata_exists:
+		# check in the metadata folder
+		new_path = './DataSet/Metadata/%s_metadata.txt' % filename
+		# print 'new_path: %s' % new_path
+		metadata_exists = os.path.isfile(new_path)
+		if metadata_exists:
+			metadata_filename = new_path
 
 	# if metadata is non-existing then we need to load the video anyways
 	# if not load_video and not metadata_exists:
@@ -261,8 +262,6 @@ def getVideoMetadata(video_src, load_video=False):
 		f.write(content)
 		f.close()
 
-	# os.remove(metadata_filename + '.part')
-
 	print '%2d%% of %s' % (100, video_src)
 
 	return d,frames
@@ -276,89 +275,12 @@ def main():
 			return
 		else:
 			video_src = arg1	
-			show_plot = None
-			show_video = None
-		show_plot = sys.argv[2] == 'true' or sys.argv[2] == 'True'
-		show_video = sys.argv[3] == 'true' or sys.argv[3] == 'True'
 	except:		
-		print 'loading default values'
 		if video_src is None:
 			print help_message
 			return
-		if show_plot is None:
-			show_plot = True	
-		if show_video is None:
-			show_video = True
-
-	d,frames = getVideoMetadata(video_src, show_video)
-
-	if not show_video and not show_plot:
-		# nothing to see here!
-		return
-
-	shift_vectors = d['shift_vectors']
-	rmsdiffs = d['rmsdiffs']
-	shift_vectors_sliding = d['shift_vectors_sliding']
-	stand_dev = d['stand_dev']
-
-	capture = cv.CaptureFromFile(video_src)
-	fps = cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FPS)
-	num_frames = int(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_COUNT))
-
-	# degree of smoothness
-	degree = 12
-	# time in seconds
-	t = np.linspace(0, num_frames/fps, len(frames))
-	# values are normalized to [0...1]
-	# the magnitude of the vector - apply weights according to the direction of the vector? ie. vertical panning is worse than horizontal
-	magnitudes = smoothTriangle((np.array([math.sqrt(x**2 + y**2) for x,y in shift_vectors])**2)/(63**2), degree)	
-	# a measure of variation/contrast in the frame - a high value indicated less contrast and vice versa
-	contrast = smoothTriangle((127.5 - np.array(stand_dev)) / 127.5, degree)
-	# compute if a frame is accepted, and the according value
-	frame_states, frame_values = computeFrameState(magnitudes, contrast)
-
-	if show_plot:
-		print 'generating plots...'
-
-		pylab.figure(figsize=(10,10))		
-		pylab.suptitle(video_src, fontsize=16)
-
-		pylab.subplot(2,2,1, title='displacement vector magnitudes')  
-		pylab.plot(t, magnitudes,".k")  
-		pylab.plot(t, magnitudes,"-k")  
-		pylab.axis()  
-		pylab.xlabel('secs.')
-		pylab.grid(True)
-
-		pylab.subplot(2,2,2, title='frame state values')  
-		pylab.plot(t, frame_values,".k")  
-		pylab.plot(t, frame_values,"-k")  
-		pylab.axis()  
-		pylab.xlabel('secs.')
-		pylab.grid(True)
-
-		pylab.subplot(2,2,3, title='image contrast')
-		pylab.plot(t, contrast,".k")  
-		pylab.plot(t, contrast,"-k")  
-		pylab.axis()  
-		pylab.xlabel('secs.')
-		pylab.grid(True)
-
-		pylab.show()
-
-	if show_video:
-		print 'video playback...'
-
-		index = 0
-		for frame in frames:
-			frame_state = 'BAD' if frame_states[index] else 'GOOD'
-			frame_value = frame_values[index]
-			draw_str(frame, (20, 20), 'time: %2.1f:%2.1f, magnitude: %2.2f%%, contrast^-1: %2.2f' % (t[index], t[-1], 100 * magnitudes[index], contrast[index]))						
-			draw_str(frame, (20, 40), '%s (%2.3f)' % (frame_state, frame_value))
-
-			index += 1
-			cv2.imshow('final cut', frame)
-			cv2.waitKey(int(1000/fps))
+		
+	getVideoMetadata(video_src, show_video)
 
 if __name__ == '__main__':
     main()

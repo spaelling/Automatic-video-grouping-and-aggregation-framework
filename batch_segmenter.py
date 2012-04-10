@@ -38,7 +38,7 @@ class MyThread(threading.Thread):
         	# 	print cmd
         	# 	os.system(cmd)
 
-			command = 'python ./vid_segmenter.py "%s%s" false false &' % (self.path, filename)
+			command = 'python ./vid_segmenter.py "%s%s" &' % (self.path, filename)
 			os.system(command)
 			# wait for metadata file to be created
 			
