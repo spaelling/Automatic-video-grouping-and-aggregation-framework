@@ -24,6 +24,7 @@ USAGE: tweak.py <video_source> <'lauge' or 'anders'>'''
 def main():
 
 	videoIDs = ['0Hwpd-tuD7o', '8vF9jGwNPQM', 'fFsAgFx8VzE_part006', 'gbZl6ULwBTU_part020', 'video1', 'video2', 'video3', 'video4', 'video5']
+	#videoIDs = ['0Hwpd-tuD7o', '8vF9jGwNPQM', 'fFsAgFx8VzE_part006', 'gbZl6ULwBTU_part020']
 
 	try:
 		arg1 = sys.argv[1]

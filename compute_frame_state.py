@@ -23,8 +23,8 @@ def computeFrameStateLauge(magnitudes, contrast):
 	states = []
 	state_values = []
 	
-	contrast_lim = 0.80
-	magnitudes_lim = 0.20
+	contrast_lim = 0.74
+	magnitudes_lim = 0.45
 
 	for i in range(0,len(magnitudes)):
 		state_value = max([contrast[i] * (1 / contrast_lim), magnitudes[i] * (1 / magnitudes_lim)])
