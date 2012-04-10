@@ -48,7 +48,10 @@ def sectionCompare(suggestion, answer):
 
 
 
-def simpleCompare(suggestion, answer):
+def simpleCompare(suggestion, answer = None):
+
+	if answer is None:
+		answer = [1 for x in suggestion]
 
 	if len(suggestion) == len(answer):
 
