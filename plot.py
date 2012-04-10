@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import vid_segmenter as segmenter
+import compute_frame_state
 import sys
 import cv
 import numpy as np
@@ -9,15 +10,17 @@ import pylab
 
 smoothTriangle = segmenter.smoothTriangle
 getVideoMetadata = segmenter.getVideoMetadata
-computeFrameState = segmenter.computeFrameState
+computeFrameStateAnders = compute_frame_state.computeFrameStateAnders
+computeFrameStateLauge = compute_frame_state.computeFrameStateLauge
 
 help_message = '''
-USAGE: vid_segmenter.py <video_source>'''
+USAGE: plot.py <video_source> <'lauge' or 'anders'>'''
 
 def main():
 	video_src = None
 	try:
 		arg1 = sys.argv[1]
+		arg2 = sys.argv[2]
 		if arg1 == '-?':
 			print help_message
 			return
@@ -49,7 +52,12 @@ def main():
 	# a measure of variation/contrast in the frame - a high value indicated less contrast and vice versa
 	contrast = smoothTriangle((127.5 - np.array(stand_dev)) / 127.5, degree)
 	# compute if a frame is accepted, and the according value
-	frame_states, frame_values = computeFrameState(magnitudes, contrast)
+	if arg2 == 'anders':
+		frame_states, frame_values = computeFrameStateAnders(magnitudes, contrast)
+	elif arg2 == 'lauge':
+		frame_states, frame_values = computeFrameStateLauge(magnitudes, contrast)
+	else:
+		return
 
 	print 'generating plots...'
 

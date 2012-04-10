@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import vid_segmenter as segmenter
+import compute_frame_state
 import sys
 import cv
 import cv2
@@ -11,15 +12,17 @@ from common import draw_str
 
 smoothTriangle = segmenter.smoothTriangle
 getVideoMetadata = segmenter.getVideoMetadata
-computeFrameState = segmenter.computeFrameState
+computeFrameStateAnders = compute_frame_state.computeFrameStateAnders
+computeFrameStateLauge = compute_frame_state.computeFrameStateLauge
 
 help_message = '''
-USAGE: vid_segmenter.py <video_source>'''
+USAGE: show.py <video_source> <'lauge' or 'anders'>'''
 
 def main():
 	video_src = None
 	try:
 		arg1 = sys.argv[1]
+		arg2 = sys.argv[2]
 		if arg1 == '-?':
 			print help_message
 			return
@@ -51,13 +54,18 @@ def main():
 	# a measure of variation/contrast in the frame - a high value indicated less contrast and vice versa
 	contrast = smoothTriangle((127.5 - np.array(stand_dev)) / 127.5, degree)
 	# compute if a frame is accepted, and the according value
-	frame_states, frame_values = computeFrameState(magnitudes, contrast)
+	if arg2 == 'anders':
+		frame_states, frame_values = computeFrameStateAnders(magnitudes, contrast)
+	elif arg2 == 'lauge':
+		frame_states, frame_values = computeFrameStateLauge(magnitudes, contrast)
+	else:
+		return
 
 	print 'video playback...'
 
 	index = 0
 	for frame in frames:
-		frame_state = 'BAD' if frame_states[index] else 'GOOD'
+		frame_state = 'BAD' if not frame_states[index] else 'GOOD'
 		frame_value = frame_values[index]
 		draw_str(frame, (20, 20), 'time: %2.1f:%2.1f, magnitude: %2.2f%%, contrast^-1: %2.2f' % (t[index], t[-1], 100 * magnitudes[index], contrast[index]))						
 		draw_str(frame, (20, 40), '%s (%2.3f)' % (frame_state, frame_value))
