@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import cv2
 import cv
 import video
