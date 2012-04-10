@@ -22,34 +22,38 @@ computeFrameStateMagnitudeOnly = compute_frame_state.computeFrameStateMagnitudeO
 computeFrameStateContrastOnly = compute_frame_state.computeFrameStateContrastOnly
 
 help_message = '''
-USAGE: tweak.py <'lauge', 'anders' 'naiive', 'magnitude', 'contrast'>'''
+USAGE: test_1.py <'lauge', 'anders' 'naiive', 'magnitude', 'contrast'> <metadata dir> <answer dir (if any)>'''
 
 def main():
 
-	videoIDs = ['0Hwpd-tuD7o', '8vF9jGwNPQM', 'fFsAgFx8VzE_part006', 'gbZl6ULwBTU_part020', 'video1', 'video2', 'video3', 'video4', 'video5']
+	metadataDir = None
+	answerDir = None
 
 	try:
 		arg1 = sys.argv[1]
 		if arg1 == '-?':
 			print help_message
 			return
+		
+		metadataDir = sys.argv[2]
+		answerDir = sys.argv[3]
 	except:		
 		print help_message
 		return
 
 
+	listOfMetaDataFiles = os.listdir(metadataDir)
+	
 	errors = []
-	for thisID in videoIDs:
+	for metaDataFile in listOfMetaDataFiles:
 
-		metadata_filename = './Tweak/' + thisID + '.m4v_metadata.txt'
-		answer_filename = './Tweak/' + thisID + '.m4v.txt'
+		thisID = metaDataFile.split('.')[0]
+
+		metadata_filename = metadataDir + '/' + thisID + '.m4v_metadata.txt'
+		answer_filename = answerDir + '/' + thisID + '.m4v.txt'
+
 		metadata_exists = os.path.isfile(metadata_filename)
 		answer_exists = os.path.isfile(answer_filename)
-
-		if not metadata_exists:
-			print 'Metadata for ' + thisID + ' does not exists'
-		if not answer_exists:
-			print 'Answer-file for ' + thisID + ' does not exists'
 
 		if metadata_exists and answer_exists:
 
@@ -92,13 +96,61 @@ def main():
 			answer_states = answer_data.get('states')
 
 			# Calculate error
-			error = calcErr.simpleCompare(frame_states, answer_states)
-			total = error.get('total')
-			correct = error.get('correct')
-			errors.append(float(correct)/total)
-			print thisID + ' correctness: %2.1f%% (%d frames)' % (100.0 * (float(correct)/total), len(magnitudes))
+			errors.append(calcErr.simpleCompare(frame_states, answer_states))
 
-	print 'Overall correctness: %2.3f%%' % (100.0 * (sum(errors)/len(errors)))
+	correctRatios = []
+	positivePrecisions = []
+	positiveRecalls = []
+	negativePrecisions = []
+	negativeRecalls = []
+	
+	for error in errors:
+
+		total = error.get('total')
+		totalPositives = error.get('total positives')
+		totalNegatives = error.get('total negatives')
+
+		correct = error.get('correct')
+		incorrect = error.get('incorrect')
+
+		truePositives = error.get('true positives')
+		trueNegatives = error.get('true negatives')
+		falsePositives = error.get('false positives')
+		falseNegatives = error.get('false negatives')
+
+		
+		if truePositives + falsePositives > 0:
+			positivePrecision = float(truePositives) / (truePositives + falsePositives)
+		else:
+			positivePrecision = 1.0
+		
+		if totalPositives > 0:
+			positiveRecall = float(truePositives) / totalPositives
+		else:
+			positiveRecall = 1.0
+
+		if trueNegatives + falseNegatives:
+			negativePrecision = float(trueNegatives) / (trueNegatives + falseNegatives)
+		else:
+			negativePrecision = 1.0
+
+		if totalNegatives > 0:
+			negativeRecall = float(trueNegatives) / totalNegatives
+		else:
+			negativeRecall = 1.0
+
+
+		correctRatios.append(float(correct)/total)
+		positivePrecisions.append(positivePrecision)
+		positiveRecalls.append(positiveRecall)
+		negativePrecisions.append(negativePrecision)
+		negativeRecalls.append(negativeRecall)
+
+	print '\nOverall correctness: %2.3f%%' % (100.0 * (sum(correctRatios)/len(correctRatios)))
+	print 'Positive precision: %2.3f%%' % (100.0 * (sum(positivePrecisions)/len(positivePrecisions)))
+	print 'Positive recall: %2.3f%%' % (100.0 * (sum(positiveRecalls)/len(positiveRecalls)))
+	print 'Negative precision: %2.3f%%' % (100.0 * (sum(negativePrecisions)/len(negativePrecisions)))
+	print 'Negative recall: %2.3f%%' % (100.0 * (sum(negativeRecalls)/len(negativeRecalls)))
 
 
 
