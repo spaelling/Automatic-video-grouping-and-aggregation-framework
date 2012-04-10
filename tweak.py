@@ -19,12 +19,16 @@ computeFrameStateAnders = compute_frame_state.computeFrameStateAnders
 computeFrameStateLauge = compute_frame_state.computeFrameStateLauge
 
 help_message = '''
-USAGE: tweak.py <video_source> <'lauge' or 'anders'>'''
+USAGE: tweak.py <'lauge' or 'anders'>'''
 
 def main():
 
 	videoIDs = ['0Hwpd-tuD7o', '8vF9jGwNPQM', 'fFsAgFx8VzE_part006', 'gbZl6ULwBTU_part020', 'video1', 'video2', 'video3', 'video4', 'video5']
+<<<<<<< HEAD
 	#videoIDs = ['0Hwpd-tuD7o', '8vF9jGwNPQM', 'fFsAgFx8VzE_part006', 'gbZl6ULwBTU_part020']
+=======
+	# videoIDs = ['0Hwpd-tuD7o', '8vF9jGwNPQM', 'fFsAgFx8VzE_part006', 'gbZl6ULwBTU_part020']
+>>>>>>> oh yeah!!!
 
 	try:
 		arg1 = sys.argv[1]
@@ -88,9 +92,9 @@ def main():
 			total = error.get('total')
 			correct = error.get('correct')
 			errors.append(float(correct)/total)
-			print thisID + ' correctness: ' + str(float(correct)/total)
+			print thisID + ' correctness: %2.1f%%' % (100.0 * (float(correct)/total))
 
-	print 'Overall correctness: ' + str(sum(errors)/len(errors))
+	print 'Overall correctness: %2.3f%%' % (100.0 * (sum(errors)/len(errors)))
 
 
 

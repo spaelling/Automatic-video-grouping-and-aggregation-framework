@@ -2,13 +2,16 @@ def computeFrameStateAnders(magnitudes, contrast):
 	
 	states = []
 	state_values = []
-	T = 0.50 # cumulative treshold
+	
 	T1 = 0.80 # contrast treshold
-	T2 = 0.20 # displacement vector treshold
+	T2 = 1.85 # displacement vector treshold
+	T = (T1+T2)/2.0 # cumulative treshold
 
 	# weights
 	a = T / T1
 	b = T / T2
+
+	# print 'a: %2.2f, b: %2.2f' % (a,b)
 
 	for i in range(0,len(magnitudes)):
 		state_value = sum([a * contrast[i], b * magnitudes[i]])	
