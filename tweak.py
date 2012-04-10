@@ -17,9 +17,12 @@ smoothTriangle = segmenter.smoothTriangle
 getVideoMetadata = segmenter.getVideoMetadata
 computeFrameStateAnders = compute_frame_state.computeFrameStateAnders
 computeFrameStateLauge = compute_frame_state.computeFrameStateLauge
+computeFrameStateNaiive = compute_frame_state.computeFrameStateNaiive
+computeFrameStateMagnitudeOnly = compute_frame_state.computeFrameStateMagnitudeOnly
+computeFrameStateContrastOnly = compute_frame_state.computeFrameStateContrastOnly
 
 help_message = '''
-USAGE: tweak.py <'lauge' or 'anders'>'''
+USAGE: tweak.py <'lauge', 'anders' 'naiive', 'magnitude', 'contrast'>'''
 
 def main():
 
@@ -77,6 +80,12 @@ def main():
 				frame_states, frame_values = computeFrameStateAnders(magnitudes, contrast)
 			elif arg1 == 'lauge':
 				frame_states, frame_values = computeFrameStateLauge(magnitudes, contrast)
+			elif arg1 == 'naiive':
+				frame_states, frame_values = computeFrameStateNaiive(magnitudes, contrast)
+			elif arg1 == 'magnitude':
+				frame_states, frame_values = computeFrameStateMagnitudeOnly(magnitudes)
+			elif arg1 == 'contrast':
+				frame_states, frame_values = computeFrameStateContrastOnly(contrast)
 			else:
 				return
 
@@ -87,7 +96,7 @@ def main():
 			total = error.get('total')
 			correct = error.get('correct')
 			errors.append(float(correct)/total)
-			print thisID + ' correctness: %2.1f%%' % (100.0 * (float(correct)/total))
+			print thisID + ' correctness: %2.1f%% (%d frames)' % (100.0 * (float(correct)/total), len(magnitudes))
 
 	print 'Overall correctness: %2.3f%%' % (100.0 * (sum(errors)/len(errors)))
 
