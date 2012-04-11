@@ -16,9 +16,9 @@ from common import draw_str
 smoothTriangle = segmenter.smoothTriangle
 getVideoMetadata = segmenter.getVideoMetadata
 computeFrameStateAnders = compute_frame_state.computeFrameStateAnders
-computeFrameStateAnders2 = compute_frame_state.computeFrameStateAnders2
-computeFrameStateAnders3 = compute_frame_state.computeFrameStateAnders3
-computeFrameStateAndersX = compute_frame_state.computeFrameStateAndersX
+computeFrameStateSquare = compute_frame_state.computeFrameStateSquare
+computeFrameStateCubic = compute_frame_state.computeFrameStateCubic
+computeFrameStateX = compute_frame_state.computeFrameStateX
 computeFrameStateLauge = compute_frame_state.computeFrameStateLauge
 computeFrameStateNaiive = compute_frame_state.computeFrameStateNaiive
 computeFrameStateMagnitudeOnly = compute_frame_state.computeFrameStateMagnitudeOnly
@@ -29,8 +29,10 @@ USAGE: tweak.py <'lauge', 'anders' 'naiive', 'magnitude', 'contrast'>'''
 
 def main():
 
+	path = './Tweak/'
+
 	videoIDs = []
-	listOfMetaDataFiles = os.listdir('./Tweak/')
+	listOfMetaDataFiles = os.listdir(path)
 	for metaDataFile in listOfMetaDataFiles:
 		parts = metaDataFile.split('.')
 		ID = parts[0]
@@ -47,21 +49,35 @@ def main():
 		print help_message
 		return
 
+	f = open('./DataSet/ignore.json','r')
+	content = f.read()
+	ignore = json.loads(content).get('ignore')
 
 	errors = []
 	for thisID in videoIDs:
+		# print thisID
+		if thisID in ignore:
+			# print 'ignoring data in %s' % thisID
+			continue
 
-		metadata_filename = './Tweak/' + thisID + '.m4v_metadata.txt'
-		answer_filename = './Tweak/' + thisID + '.m4v.txt'
+		# uncomment to only use "cut" segments
+		# if 'part' not in thisID:
+		# 	continue
+
+		metadata_filename = path + thisID + '.m4v_metadata.txt'
+		answer_filename = path + thisID + '.m4v.txt'
 		metadata_exists = os.path.isfile(metadata_filename)
 		answer_exists = os.path.isfile(answer_filename)
 
 		if not metadata_exists:
 			print 'Metadata for ' + thisID + ' does not exists'
-		if not answer_exists:
+		# if there is no answer file and the filename does not have 'part' in it
+		# it is likely missing. otherwise we will create one
+		if not answer_exists and ('part' not in thisID):
 			print 'Answer-file for ' + thisID + ' does not exists'
 
-		if metadata_exists and answer_exists:
+		# if metadata_exists and answer_exists:
+		if metadata_exists:
 
 			f = open(metadata_filename,'r')
 			content = f.read()
@@ -69,27 +85,38 @@ def main():
 			d = metadata
 			f.close()
 
-			f = open(answer_filename,'r')
-			content = f.read()
-			answer_data = json.loads(content)
-			f.close()
+			if answer_exists:
+				f = open(answer_filename,'r')
+				content = f.read()
+				answer_data = json.loads(content)
+				f.close()
+			else:
+				answer_data = dict(states=[1 for x in metadata.get('shift_vectors')])
 
 			shift_vectors = d['shift_vectors']
-			rmsdiffs = d['rmsdiffs']
-			shift_vectors_sliding = d['shift_vectors_sliding']
+			# rmsdiffs = d['rmsdiffs']
+			# shift_vectors_sliding = d['shift_vectors_sliding']
 			stand_dev = d['stand_dev']
 
 			# degree of smoothness
 			degree = 12
 			
-			magnitudes = smoothTriangle((np.array([math.sqrt(x**2 + y**2) for x,y in shift_vectors])**2)/(63**2), degree)	
-			contrast = smoothTriangle((127.5 - np.array(stand_dev)) / 127.5, degree)
+			try:
+				magnitudes = smoothTriangle((np.array([math.sqrt(x**2 + y**2) for x,y in shift_vectors])**2)/(63**2), degree)	
+				contrast = smoothTriangle((127.5 - np.array(stand_dev)) / 127.5, degree)
+			except IndexError as e:
+				# too little data in segment will cause this error
+				continue
 			
 			# compute if a frame is accepted, and the according value
 			if arg1 == 'anders':
-				frame_states, frame_values = computeFrameStateAnders3(magnitudes, contrast)
-			if arg1 == 'andersX':
-				frame_states, frame_values = computeFrameStateAndersX(magnitudes, contrast, 5.0, 0.7)
+				frame_states, frame_values = computeFrameStateAnders(magnitudes, contrast)
+			elif arg1 == 'square':
+				frame_states, frame_values = computeFrameStateSquare(magnitudes, contrast)
+			elif arg1 == 'cubic':
+				frame_states, frame_values = computeFrameStateCubic(magnitudes, contrast)
+			# elif arg1 == 'algox':
+			# 	frame_states, frame_values = computeFrameStateX(magnitudes, contrast, 5.0, 0.7)
 			elif arg1 == 'lauge':
 				frame_states, frame_values = computeFrameStateLauge(magnitudes, contrast)
 			elif arg1 == 'naiive':

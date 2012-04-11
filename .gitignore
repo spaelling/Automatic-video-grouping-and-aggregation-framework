@@ -7,5 +7,6 @@ DataSet/Cut/*.avi
 DataSet/Cut/processed/*
 DataSet/Cut/todo/*
 DataSet/Segment test/*
+Tweak2/*
 .DS_Store*
 *.pyc
