@@ -46,6 +46,9 @@ def main():
 		print help_message
 		return
 
+	f = open('./DataSet/ignore.json','r')
+	content = f.read()
+	ignore = json.loads(content).get('ignore')
 
 	listOfMetaDataFiles = os.listdir(metadataDir)
 	
@@ -54,6 +57,9 @@ def main():
 
 		# Get video ID
 		thisID = metaDataFile.split('.')[0]
+
+		if thisID in ignore:
+			continue
 
 		# Get metadata file for video
 		metadata_filename = metadataDir + '/' + thisID + '.m4v_metadata.txt'
@@ -76,8 +82,8 @@ def main():
 			f.close()
 
 			shift_vectors = d['shift_vectors']
-			rmsdiffs = d['rmsdiffs']
-			shift_vectors_sliding = d['shift_vectors_sliding']
+			# rmsdiffs = d['rmsdiffs']
+			# shift_vectors_sliding = d['shift_vectors_sliding']
 			stand_dev = d['stand_dev']
 			
 			# Smooth the data (doesnt matter very much)
