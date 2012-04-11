@@ -29,7 +29,14 @@ USAGE: tweak.py <'lauge', 'anders' 'naiive', 'magnitude', 'contrast'>'''
 
 def main():
 
-	videoIDs = ['0Hwpd-tuD7o', '8vF9jGwNPQM', 'fFsAgFx8VzE_part006', 'gbZl6ULwBTU_part020', 'video1', 'video2', 'video3', 'video4', 'video5']
+	videoIDs = []
+	listOfMetaDataFiles = os.listdir('./Tweak/')
+	for metaDataFile in listOfMetaDataFiles:
+		parts = metaDataFile.split('.')
+		ID = parts[0]
+		kind = parts[1]
+		if kind == 'm4v_metadata':
+			videoIDs.append(ID)
 
 	try:
 		arg1 = sys.argv[1]
@@ -97,13 +104,68 @@ def main():
 			answer_states = answer_data.get('states')
 
 			# Calculate error
-			error = calcErr.simpleCompare(frame_states, answer_states)
-			total = error.get('total')
-			correct = error.get('correct')
-			errors.append(float(correct)/total)
-			print thisID + ' correctness: %2.1f%% (%d frames)' % (100.0 * (float(correct)/total), len(magnitudes))
+			errors.append(calcErr.simpleCompare(frame_states, answer_states))
 
-	print 'Overall correctness: %2.3f%%' % (100.0 * (sum(errors)/len(errors)))
+	
+
+	totals = 0
+	totalPositives = 0
+	totalNegatives = 0
+	corrects = 0
+	truePositives = 0
+	trueNegatives = 0
+	falsePositives = 0
+	falseNegatives = 0
+	
+	for error in errors:
+
+		totals += int(error.get('total'))
+		totalPositives += int(error.get('total positives'))
+		totalNegatives += int(error.get('total negatives'))
+
+		corrects += error.get('correct')
+
+		truePositives += error.get('true positives')
+		trueNegatives += error.get('true negatives')
+		falsePositives += error.get('false positives')
+		falseNegatives += error.get('false negatives')
+
+	correctsRatio = float(corrects)/totals
+	try:
+		positivePrecision = float(truePositives) / (truePositives + falsePositives)
+	except:
+		positivePrecision = -1
+	try:
+		positiveRecall = float(truePositives) / totalPositives
+	except:
+		positiveRecall = -1
+	try:
+		negativePrecision = float(trueNegatives) / (trueNegatives + falseNegatives)
+	except:
+		negativePrecision = -1
+	try:
+		negativeRecall = float(trueNegatives) / totalNegatives
+	except:
+		negativeRecall = -1
+
+	
+	print '\nOverall accuracy: %2.3f%%' % (100.0 * correctsRatio)
+	if positivePrecision >= 0:
+		print 'Positive precision: %2.3f%%' % (100.0 * positivePrecision)
+	else:
+		print 'Positive precision: NOT DEFINED'
+	if positiveRecall >= 0:
+		print 'Positive recall: %2.3f%%' % (100.0 * positiveRecall)
+	else:
+		print 'Positive recall: NOT DEFINED'
+	if negativePrecision >= 0:
+		print 'Negative precision: %2.3f%%' % (100.0 * negativePrecision)
+	else:
+		print 'Negative precision: NOT DEFINED'
+	if negativeRecall >= 0:
+		print 'Negative recall: %2.3f%%' % (100.0 * negativeRecall)
+	else:
+		print 'Negative recall: NOT DEFINED'
 
 
 
