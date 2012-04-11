@@ -16,6 +16,9 @@ from common import draw_str
 smoothTriangle = segmenter.smoothTriangle
 getVideoMetadata = segmenter.getVideoMetadata
 computeFrameStateAnders = compute_frame_state.computeFrameStateAnders
+computeFrameStateAnders2 = compute_frame_state.computeFrameStateAnders2
+computeFrameStateAnders3 = compute_frame_state.computeFrameStateAnders3
+computeFrameStateAndersX = compute_frame_state.computeFrameStateAndersX
 computeFrameStateLauge = compute_frame_state.computeFrameStateLauge
 computeFrameStateNaiive = compute_frame_state.computeFrameStateNaiive
 computeFrameStateMagnitudeOnly = compute_frame_state.computeFrameStateMagnitudeOnly
@@ -77,7 +80,9 @@ def main():
 			
 			# compute if a frame is accepted, and the according value
 			if arg1 == 'anders':
-				frame_states, frame_values = computeFrameStateAnders(magnitudes, contrast)
+				frame_states, frame_values = computeFrameStateAnders3(magnitudes, contrast)
+			if arg1 == 'andersX':
+				frame_states, frame_values = computeFrameStateAndersX(magnitudes, contrast, 5.0, 0.7)
 			elif arg1 == 'lauge':
 				frame_states, frame_values = computeFrameStateLauge(magnitudes, contrast)
 			elif arg1 == 'naiive':
