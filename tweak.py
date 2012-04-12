@@ -16,6 +16,7 @@ from common import draw_str
 smoothTriangle = segmenter.smoothTriangle
 getVideoMetadata = segmenter.getVideoMetadata
 computeFrameStateAnders = compute_frame_state.computeFrameStateAnders
+computeFrameStateAnders2 = compute_frame_state.computeFrameStateAnders2
 computeFrameStateSquare = compute_frame_state.computeFrameStateSquare
 computeFrameStateCubic = compute_frame_state.computeFrameStateCubic
 # computeFrameStateX = compute_frame_state.computeFrameStateX
@@ -111,6 +112,8 @@ def main():
 			# compute if a frame is accepted, and the according value
 			if arg1 == 'anders':
 				frame_states, frame_values = computeFrameStateAnders(magnitudes, contrast)
+			elif arg1 == 'anders2':
+				frame_states, frame_values = computeFrameStateAnders2(magnitudes, contrast)				
 			elif arg1 == 'square':
 				frame_states, frame_values = computeFrameStateSquare(magnitudes, contrast)
 			elif arg1 == 'cubic':
