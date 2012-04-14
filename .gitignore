@@ -6,7 +6,9 @@ DataSet/Cut/*.m4v
 DataSet/Cut/*.avi
 DataSet/Cut/processed/*
 DataSet/Cut/todo/*
-DataSet/Segment test/*
+DataSet/Segment test/Processed/*
+DataSet/Segment test/Raw/*
+DataSet/Segment test/anders/*
 Tweak2/*
 .DS_Store*
 *.pyc

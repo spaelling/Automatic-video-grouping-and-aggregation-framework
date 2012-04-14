@@ -31,17 +31,19 @@ def main():
 	cap = video.create_capture(video_src)
 	capture = cv.CaptureFromFile(video_src)
 	fps = cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FPS)
+	num_frames = float(cv.GetCaptureProperty(capture, cv.CV_CAP_PROP_FRAME_COUNT))
 
 	keyDown = False
 	states = []
 
+	index = 0
 	while True:
 
 		ret, frame = cap.read()
 		if ret:
 			if len(states) == 0:
 				# show first frame and let user decide if it is good or bad
-				draw_str(frame, (20, 20), 'BAD')
+				draw_str(frame, (20, 40), 'BAD')
 				cv2.imshow('', frame)
 				ch = cv2.waitKey(2500)
 			else:
@@ -57,8 +59,11 @@ def main():
 				state = 'BAD'
 				states.append(0)
 
-			draw_str(frame, (20, 20), state)
+			# draw_str(frame, (20, 40), state)
+			draw_str(frame, (20, 20), '%s, %2d:%02d\t %2.2f%%' % (state, int((index / fps) / 60), int((index / fps) % 60), 100.0 * index / num_frames))
 			cv2.imshow('', frame)
+
+			index += 1
 		else:
 			# no more frames...
 			break
