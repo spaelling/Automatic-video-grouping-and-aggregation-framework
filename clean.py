@@ -29,9 +29,14 @@ def main():
 	f = open('./DataSet/ignore.json','r')
 	content = f.read()
 	ignore = json.loads(content).get('ignore')
-	for filename in ignore:
+	for _filename in ignore:
 		# print 'removing %s%s' % (folder, filename)
-		os.system('rm %s%s.avi' % (folder, filename))
+		filename = '%s%s.avi' % (folder, _filename)
+		if os.path.isfile(filename):
+			os.system('rm %s' % (filename))
+		filename = '%s%s.m4v_metadata.txt' % (folder, _filename)
+		if os.path.isfile(filename):
+			os.system('rm %s' % (filename))
 
 if __name__ == '__main__':
     main()
