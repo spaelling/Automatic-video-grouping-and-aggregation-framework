@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import vid_segmenter as segmenter
+import roc
 import compute_frame_state
 import seg_result_comparison as calcErr
 import sys
