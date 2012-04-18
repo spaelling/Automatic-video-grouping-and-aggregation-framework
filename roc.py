@@ -18,12 +18,13 @@ except ImportError:
 
 class ROCpt():
 
-	def __init__(self, tp, fp, tn, fn):
+	def __init__(self, tp, fp, tn, fn, label=''):
 		
 		self.tp = float(tp)
 		self.fp = float(fp)
 		self.tn = float(tn)
 		self.fn = float(fn)
+		self.label = label
 
 	def positives(self):
 
@@ -79,22 +80,25 @@ class ROCPlot():
 			data = content.get('data')
 
 			def extract(x):
-				return ROCpt(x.get('tp'), x.get('fp'), x.get('tn'), x.get('fn'))
+				return ROCpt(x.get('tp'), x.get('fp'), x.get('tn'), x.get('fn'), label=x.get('label', ''))
 			rocpts = [extract(x) for x in data]
 			for rocpt in rocpts:
 				self.plot(rocpt)
 			self.show()
 
 	def show(self):
+		
+		pylab.legend()
 		pylab.show()
 
 	def plot(self, rocpt):
 
-		pylab.plot(rocpt.fp_rate(), rocpt.tp_rate(),"xr")   
+		pylab.plot(rocpt.fp_rate(), rocpt.tp_rate(),"or", label=rocpt.label)
+
 
 	def generate_file(self, filename, data):
 
-		content = json.dumps(dict(data=[dict(tp=tp,fp=fp,tn=tn,fn=fn) for tp, fp, tn, fn in data]))
+		content = json.dumps(dict(data=[dict(tp=tp,fp=fp,tn=tn,fn=fn,label=label) for tp, fp, tn, fn, label in data]))
 		f = open(filename,'w')
 		f.write(content)
 		f.close()		
@@ -115,16 +119,20 @@ class ROCPlot():
 
 	# a data-file can be generated
 	data = [(2,1,4,2),(6,2,5,1)]
-	roc_plot.generate_file('roc.data', data)		
+	roc_plot.generate_file('roc_data.txt', data)
 
 	# one can also load data from a filename
-	roc_plot = ROCPlot(filename='roc.data')
+	roc_plot = ROCPlot(filename='roc_data.txt')
 		"""
 		print help_txt
 
 def main():
 
-	roc_plot = ROCPlot(filename='roc.data')
+	roc_plot = ROCPlot()
+	data = [(2,1,4,2,'A'),(6,2,5,1,'B')]
+	roc_plot.generate_file('roc_data.txt', data)
+
+	roc_plot = ROCPlot(filename='roc_data.txt')
 
 if __name__ == '__main__':
     main()
