@@ -50,7 +50,7 @@ class ROCpt():
 
 	def recall(self):
 
-		return self.tp / self.positives()
+		return self.tp_rate()
 
 	def accuracy(self):
 
@@ -61,15 +61,19 @@ class ROCpt():
 		return 2.0 / (1/self.precision() + 1/self.recall())
 
 class ROCPlot():
-	def __init__(self, fig_title='ROC-graph', filename=None):
+	def __init__(self, fig_title='ROC-graph', filename=None, show_legend=True, plot_on=True):
 
-		pylab.figure(figsize=(10,10))		
-		pylab.suptitle(fig_title, fontsize=16)
-		pylab.plot([0,1],[0,1], ":k")
-		pylab.axis([0,1,0,1])  
-		pylab.xlabel('False positive rate.')
-		pylab.ylabel('True positive rate.')
-		pylab.grid(True)
+		self.show_legend = show_legend
+		self.plot_on = plot_on
+
+		if self.plot_on:
+			pylab.figure(figsize=(10,10))		
+			pylab.suptitle(fig_title, fontsize=16)
+			pylab.plot([0,1],[0,1], ":k")
+			pylab.axis([0,1,0,1])  
+			pylab.xlabel('False positive rate.')
+			pylab.ylabel('True positive rate.')
+			pylab.grid(True)
 
 		if filename:
 			f = open(filename,'r')
@@ -88,12 +92,15 @@ class ROCPlot():
 
 	def show(self):
 		
-		pylab.legend()
-		pylab.show()
+		if self.plot_on:
+			if self.show_legend:
+				pylab.legend(loc='best')
+			pylab.show()
 
 	def plot(self, rocpt):
 
-		pylab.plot(rocpt.fp_rate(), rocpt.tp_rate(),"or", label=rocpt.label)
+		if self.plot_on:
+			pylab.plot(rocpt.fp_rate(), rocpt.tp_rate(),"or", label=rocpt.label)
 
 
 	def generate_file(self, filename, data):
@@ -126,13 +133,124 @@ class ROCPlot():
 		"""
 		print help_txt
 
+import tweak2
+import threading
+import Queue
+from multiprocessing import Process, Pipe
+
+class Worker(threading.Thread):
+
+	def __init__(self, in_queue, out_queue, method):
+		threading.Thread.__init__(self)
+
+		self.method = method
+		self.in_queue = in_queue
+		self.out_queue = out_queue
+
+	def run(self):
+
+		while True:
+
+			#grabs parameter from queue
+			p = self.in_queue.get()
+			method = self.method
+
+			tp,fp,tn,fn = tweak2.tweak(method, p)	
+			label = str(method.__name__)		
+
+			result = tp,fp,tn,fn, label
+			self.out_queue.put(result, block=False)
+
+			#signals to queue job is done
+			self.in_queue.task_done()
+
+class Gatherer(threading.Thread):
+
+	def __init__(self, in_queue, num_results, filename):
+		threading.Thread.__init__(self)
+
+		self.in_queue = in_queue
+		self.num_results = num_results
+		self.filename = filename
+		self.data = []
+
+	def run(self):
+
+		# stop = False
+		while True:
+
+			#grabs result from queue and append to data
+			result = self.in_queue.get()
+			self.data.append(result)
+			
+			print '%d, %d' % (len(self.data), self.num_results)
+
+			if len(self.data) == self.num_results:
+				# stop = True
+				roc_plot = ROCPlot(plot_on=False)
+				roc_plot.generate_file(self.filename, self.data)
+
+			#signals to queue job is done
+			self.in_queue.task_done()
+
 def main():
 
-	roc_plot = ROCPlot()
-	data = [(2,1,4,2,'A'),(6,2,5,1,'B')]
-	roc_plot.generate_file('roc_data.txt', data)
+	# roc_plot = ROCPlot()
+	# data = [(2,1,4,2,'A'),(6,2,5,1,'B')]
+	# roc_plot.generate_file('roc_data.txt', data)
 
-	roc_plot = ROCPlot(filename='roc_data.txt')
+	# roc_plot = ROCPlot(filename='roc_data.txt')
+
+	filename = 'roc_data.txt'
+	generate_data = True
+	if generate_data:
+		data = []
+		import compute_frame_state	
+		method = compute_frame_state.computeFrameStateAnders
+		params = np.linspace(1e-6,0.25,24)
+
+		in_queue = Queue.Queue()
+		out_queue = Queue.Queue()
+		#spawn a pool of threads, and pass them queue instance 
+		for i in range(min(4, len(params))):
+			print 'spawning worker #%d' % i
+			t = Worker(in_queue, out_queue, method)
+			t.setDaemon(True)
+			t.start()
+
+		print 'spawning gatherer'
+		t = Gatherer(out_queue, len(params), filename)
+		t.setDaemon(True)
+		t.start()	
+
+		#populate queue with data   
+		for p in params:
+			print 'adding: %s(%f)' % (method.__name__, p)
+			in_queue.put(p)
+
+		print 'waiting for jobs to complete...'
+		#wait on the queue until everything has been processed     
+		in_queue.join()
+		print 'workers done!'
+		out_queue.join()
+		print 'gatherer done!'
+		print 'Done and done!'
+
+	
+
+	# params = np.append(np.linspace(1e-6,0.25,20), np.linspace(0.25 + 1e-6,1,15))
+	# i = 0	
+	# for p in params:
+	# 	tp,fp,tn,fn = tweak2.tweak(method, p)
+	# 	label = str(method.__name__)
+	# 	data.append((tp,fp,tn,fn,label))
+		
+	# 	i += 1
+	# 	print '%2.2f%%' % (100 * float(i)/len(params))
+	# roc_plot = ROCPlot(plot_on=False)
+	# roc_plot.generate_file(filename, data)
+
+	ROCPlot(filename=filename, show_legend=False)
 
 if __name__ == '__main__':
     main()

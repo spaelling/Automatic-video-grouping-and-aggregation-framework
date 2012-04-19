@@ -1,12 +1,13 @@
 import math
 
-def computeFrameStateAnders(magnitudes, contrast):
+def computeFrameStateAnders(magnitudes, contrast, p):
 	
 	states = []
 	state_values = []
 	
 	T1 = 1.0 # contrast treshold
-	T2 = 0.015 # displacement vector treshold
+	# T2 = 0.015 # displacement vector treshold
+	T2 = p
 	T = (T1+T2)/2.0 # cumulative treshold
 
 	# weights
