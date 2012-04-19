@@ -201,13 +201,13 @@ def main():
 
 	# roc_plot = ROCPlot(filename='roc_data.txt')
 
-	filename = 'roc_data.txt'
+	filename = 'roc_data2.txt'
 	generate_data = True
 	if generate_data:
 		data = []
 		import compute_frame_state	
 		method = compute_frame_state.computeFrameStateAnders
-		params = np.linspace(1e-6,0.25,24)
+		params = np.append(np.linspace(1e-6,0.5,48), np.linspace(0.5+1e-6,1,20))
 
 		in_queue = Queue.Queue()
 		out_queue = Queue.Queue()
