@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 import seg_result_comparison as calcErr
-# import sys
-# import cv
-# import cv2
 import numpy as np
 import math
 import os
@@ -11,63 +8,65 @@ import json
 import pylab
 import vid_segmenter as segmenter
 smoothTriangle = segmenter.smoothTriangle
-# from common import draw_str
 
-def tweak(method, p, path='./Tweak/'):
+class Tweak():
 
-	videoIDs = []
-	listOfMetaDataFiles = os.listdir(path)
-	for metaDataFile in listOfMetaDataFiles:
-		parts = metaDataFile.split('.')
-		ID = parts[0]
-		kind = parts[1]
-		if kind == 'm4v_metadata':
-			videoIDs.append(ID)
+	def __init__(self, method, path='./Tweak/'):
 
-	# try:
-	# 	arg1 = sys.argv[1]
-	# 	if arg1 == '-?':
-	# 		print help_message
-	# 		return
-	# except:		
-	# 	print help_message
-	# 	return
+		self.method = method
+		self.path = path
+		self.metadatas = []
+		self.answer_datas = []
 
-	f = open('./DataSet/ignore.json','r')
-	content = f.read()
-	ignore = json.loads(content).get('ignore')
+		self.init()
 
-	errors = []
-	for thisID in videoIDs:
-		# print thisID
-		if thisID in ignore:
-			# print 'ignoring data in %s' % thisID
-			continue
+	def init(self):
 
-		# uncomment to only use "cut" segments
-		# if 'part' not in thisID:
-		# 	continue
+		path = self.path
 
-		metadata_filename = path + thisID + '.m4v_metadata.txt'
-		answer_filename = path + thisID + '.m4v.txt'
-		metadata_exists = os.path.isfile(metadata_filename)
-		answer_exists = os.path.isfile(answer_filename)
+		videoIDs = []
+		listOfMetaDataFiles = os.listdir(path)
+		for metaDataFile in listOfMetaDataFiles:
+			parts = metaDataFile.split('.')
+			ID = parts[0]
+			kind = parts[1]
+			if kind == 'm4v_metadata':
+				videoIDs.append(ID)
 
-		if not metadata_exists:
-			print 'Metadata for ' + thisID + ' does not exists'
-		# if there is no answer file and the filename does not have 'part' in it
-		# it is likely missing. otherwise we will create one
-		if not answer_exists and ('part' not in thisID):
-			print 'Answer-file for ' + thisID + ' does not exists'
+		f = open('./DataSet/ignore.json','r')
+		content = f.read()
+		ignore = json.loads(content).get('ignore')
 
-		# if metadata_exists and answer_exists:
-		if metadata_exists:
+		for thisID in videoIDs:
+			# print thisID
+			if thisID in ignore:
+				# print 'ignoring data in %s' % thisID
+				continue
 
-			f = open(metadata_filename,'r')
-			content = f.read()
-			metadata = json.loads(content)
-			d = metadata
-			f.close()
+			# uncomment to only use "cut" segments
+			# if 'part' not in thisID:
+			# 	continue
+
+			metadata_filename = path + thisID + '.m4v_metadata.txt'
+			answer_filename = path + thisID + '.m4v.txt'
+			metadata_exists = os.path.isfile(metadata_filename)
+			answer_exists = os.path.isfile(answer_filename)
+
+			if not metadata_exists:
+				print 'Metadata for ' + thisID + ' does not exists'
+			# if there is no answer file and the filename does not have 'part' in it
+			# it is likely missing. otherwise we will create one
+			if not answer_exists and ('part' not in thisID):
+				print 'Answer-file for ' + thisID + ' does not exists'	
+
+			# if metadata_exists and answer_exists:
+			if metadata_exists:
+
+				f = open(metadata_filename,'r')
+				content = f.read()
+				metadata = json.loads(content)
+				self.metadatas.append(metadata)
+				f.close()
 
 			if answer_exists:
 				f = open(answer_filename,'r')
@@ -76,11 +75,20 @@ def tweak(method, p, path='./Tweak/'):
 				f.close()
 			else:
 				answer_data = dict(states=[1 for x in metadata.get('shift_vectors')])
+			self.answer_datas.append(answer_data)
 
-			shift_vectors = d['shift_vectors']
-			# rmsdiffs = d['rmsdiffs']
-			# shift_vectors_sliding = d['shift_vectors_sliding']
-			stand_dev = d['stand_dev']
+	def tweak(self, p):
+
+		errors = []
+
+		for i in range(len(self.metadatas)):
+
+			metadata = self.metadatas[i]
+			answer_data = self.answer_datas[i]
+			method = self.method
+
+			shift_vectors = metadata['shift_vectors']
+			stand_dev = metadata['stand_dev']
 
 			# degree of smoothness
 			degree = 12
@@ -93,90 +101,49 @@ def tweak(method, p, path='./Tweak/'):
 				continue
 			
 			frame_states, frame_values = method(magnitudes, contrast, p)
-			
-			# compute if a frame is accepted, and the according value
-			# if arg1 == 'anders':
-			# 	frame_states, frame_values = computeFrameStateAnders(magnitudes, contrast)
-			# elif arg1 == 'anders2':
-			# 	frame_states, frame_values = computeFrameStateAnders2(magnitudes, contrast)				
-			# elif arg1 == 'square':
-			# 	frame_states, frame_values = computeFrameStateSquare(magnitudes, contrast)
-			# elif arg1 == 'cubic':
-			# 	frame_states, frame_values = computeFrameStateCubic(magnitudes, contrast)
-			# # elif arg1 == 'algox':
-			# # 	frame_states, frame_values = computeFrameStateX(magnitudes, contrast, 5.0, 0.7)
-			# elif arg1 == 'lauge':
-			# 	frame_states, frame_values = computeFrameStateLauge(magnitudes, contrast)
-			# elif arg1 == 'naiive':
-			# 	frame_states, frame_values = computeFrameStateNaiive(magnitudes, contrast)
-			# elif arg1 == 'magnitude':
-			# 	frame_states, frame_values = computeFrameStateMagnitudeOnly(magnitudes)
-			# elif arg1 == 'contrast':
-			# 	frame_states, frame_values = computeFrameStateContrastOnly(contrast)
-			# else:
-			# 	return
-
 			answer_states = answer_data.get('states')
 
 			# Calculate error
 			errors.append(calcErr.simpleCompare(frame_states, answer_states))
 
-	totals = 0
-	totalPositives = 0
-	totalNegatives = 0
-	corrects = 0
-	truePositives = 0
-	trueNegatives = 0
-	falsePositives = 0
-	falseNegatives = 0
-	
-	for error in errors:
+		totals = 0
+		totalPositives = 0
+		totalNegatives = 0
+		corrects = 0
+		truePositives = 0
+		trueNegatives = 0
+		falsePositives = 0
+		falseNegatives = 0
+		
+		for error in errors:
 
-		totals += int(error.get('total'))
-		totalPositives += int(error.get('total positives'))
-		totalNegatives += int(error.get('total negatives'))
+			totals += int(error.get('total'))
+			totalPositives += int(error.get('total positives'))
+			totalNegatives += int(error.get('total negatives'))
 
-		corrects += error.get('correct')
+			corrects += error.get('correct')
 
-		truePositives += error.get('true positives')
-		trueNegatives += error.get('true negatives')
-		falsePositives += error.get('false positives')
-		falseNegatives += error.get('false negatives')
+			truePositives += error.get('true positives')
+			trueNegatives += error.get('true negatives')
+			falsePositives += error.get('false positives')
+			falseNegatives += error.get('false negatives')
 
-	correctsRatio = float(corrects)/totals
-	try:
-		positivePrecision = float(truePositives) / (truePositives + falsePositives)
-	except:
-		positivePrecision = -1
-	try:
-		positiveRecall = float(truePositives) / totalPositives
-	except:
-		positiveRecall = -1
-	try:
-		negativePrecision = float(trueNegatives) / (trueNegatives + falseNegatives)
-	except:
-		negativePrecision = -1
-	try:
-		negativeRecall = float(trueNegatives) / totalNegatives
-	except:
-		negativeRecall = -1
+		correctsRatio = float(corrects)/totals
+		try:
+			positivePrecision = float(truePositives) / (truePositives + falsePositives)
+		except:
+			positivePrecision = -1
+		try:
+			positiveRecall = float(truePositives) / totalPositives
+		except:
+			positiveRecall = -1
+		try:
+			negativePrecision = float(trueNegatives) / (trueNegatives + falseNegatives)
+		except:
+			negativePrecision = -1
+		try:
+			negativeRecall = float(trueNegatives) / totalNegatives
+		except:
+			negativeRecall = -1
 
-	return truePositives, falsePositives, trueNegatives, falseNegatives
-
-	# print '\nOverall accuracy: %2.3f%%' % (100.0 * correctsRatio)
-	# if positivePrecision >= 0:
-	# 	print 'Positive precision: %2.3f%%' % (100.0 * positivePrecision)
-	# else:
-	# 	print 'Positive precision: NOT DEFINED'
-	# if positiveRecall >= 0:
-	# 	print 'Positive recall: %2.3f%%' % (100.0 * positiveRecall)
-	# else:
-	# 	print 'Positive recall: NOT DEFINED'
-	# if negativePrecision >= 0:
-	# 	print 'Negative precision: %2.3f%%' % (100.0 * negativePrecision)
-	# else:
-	# 	print 'Negative precision: NOT DEFINED'
-	# if negativeRecall >= 0:
-	# 	print 'Negative recall: %2.3f%%' % (100.0 * negativeRecall)
-	# else:
-	# 	print 'Negative recall: NOT DEFINED'
+		return truePositives, falsePositives, trueNegatives, falseNegatives

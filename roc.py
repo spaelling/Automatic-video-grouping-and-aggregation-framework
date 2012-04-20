@@ -4,6 +4,8 @@
 import numpy as np
 import math
 import pylab
+import time
+import datetime
 
 # Find a JSON parser
 try:
@@ -143,7 +145,8 @@ class Worker(threading.Thread):
 	def __init__(self, in_queue, out_queue, method):
 		threading.Thread.__init__(self)
 
-		self.method = method
+		self.label = str(method.__name__)
+		self.tweak = tweak2.Tweak(method)
 		self.in_queue = in_queue
 		self.out_queue = out_queue
 
@@ -153,10 +156,9 @@ class Worker(threading.Thread):
 
 			#grabs parameter from queue
 			p = self.in_queue.get()
-			method = self.method
 
-			tp,fp,tn,fn = tweak2.tweak(method, p)	
-			label = str(method.__name__)		
+			tp,fp,tn,fn = self.tweak.tweak(p)	
+			label = self.label
 
 			result = tp,fp,tn,fn, label
 			self.out_queue.put(result, block=False)
@@ -201,18 +203,31 @@ def main():
 
 	# roc_plot = ROCPlot(filename='roc_data.txt')
 
+	# WTF???
+	# 16 threads, 16 params: 2:11
+	# 4 threads, 16 params: 2:02
+	# 2 threads, 16 params: 2:07
+	# 32 threads, 64 params: 
+
 	filename = 'roc_data2.txt'
 	generate_data = True
 	if generate_data:
+		start = time.time()
+
+		threads = 32
 		data = []
 		import compute_frame_state	
 		method = compute_frame_state.computeFrameStateAnders
 		params = np.append(np.linspace(1e-6,0.5,48), np.linspace(0.5+1e-6,1,20))
+		params = np.linspace(1e-6,0.5,64)
 
+		print 'generating data with %d threads. #parameters: %d' % (threads, len(params))
+
+		threads = min(threads, len(params))
 		in_queue = Queue.Queue()
 		out_queue = Queue.Queue()
 		#spawn a pool of threads, and pass them queue instance 
-		for i in range(min(4, len(params))):
+		for i in range(threads):
 			print 'spawning worker #%d' % i
 			t = Worker(in_queue, out_queue, method)
 			t.setDaemon(True)
@@ -236,6 +251,10 @@ def main():
 		print 'gatherer done!'
 		print 'Done and done!'
 
+		end = time.time()
+
+		elapsed_time = end - start
+		print 'elapsed time: %d:%02d' % (int(elapsed_time/60.0), int(elapsed_time % 60.0))
 	
 
 	# params = np.append(np.linspace(1e-6,0.25,20), np.linspace(0.25 + 1e-6,1,15))

@@ -6,8 +6,8 @@ def computeFrameStateAnders(magnitudes, contrast, p=0.015):
 	state_values = []
 	
 	T1 = 1.0 # contrast treshold
-	T2 = 0.015 # displacement vector treshold
-	# T2 = p
+	# T2 = 0.015 # displacement vector treshold
+	T2 = p
 	T = (T1+T2)/2.0 # cumulative treshold
 
 	# weights
@@ -23,13 +23,13 @@ def computeFrameStateAnders(magnitudes, contrast, p=0.015):
 
 	return states, state_values
 
-def computeFrameStateAnders2(magnitudes, contrast):
+def computeFrameStateAnders2(magnitudes, contrast, p=0.045):
 	
 	states = []
 	state_values = []
 	
-	T1 = .25 # contrast treshold
-	T2 = .18 # displacement vector treshold
+	T1 = 1.0 # contrast treshold
+	T2 = p # displacement vector treshold
 	T = (T1+T2)/2.0 # cumulative treshold
 
 	# weights
@@ -45,12 +45,12 @@ def computeFrameStateAnders2(magnitudes, contrast):
 
 	return states, state_values
 
-def computeFrameStateSquare(magnitudes, contrast):
+def computeFrameStateSquare(magnitudes, contrast, p=0.4):
 	
 	states = []
 	state_values = []
 	
-	T = 0.4
+	T = p
 
 	for i in range(0,len(magnitudes)):
 		state_value = math.sqrt(contrast[i]**2 + magnitudes[i]**2)
@@ -59,12 +59,12 @@ def computeFrameStateSquare(magnitudes, contrast):
 
 	return states, state_values	
 
-def computeFrameStateCubic(magnitudes, contrast):
+def computeFrameStateCubic(magnitudes, contrast, p=0.4):
 	
 	states = []
 	state_values = []
 	
-	T = 0.4
+	T = p
 
 	for i in range(0,len(magnitudes)):
 		state_value = (contrast[i]**3 + magnitudes[i]**3)**(1.0/3.0)
