@@ -90,7 +90,7 @@ computeFrameStateMagnitudeOnly = compute_frame_state.computeFrameStateMagnitudeO
 computeFrameStateContrastOnly = compute_frame_state.computeFrameStateContrastOnly
 
 
-help_message = '''USAGE: roc.py <method> <outfile>'''
+help_message = '''USAGE: roc.py <method> [outfile] [threads]'''
 
 def main():
 
@@ -108,11 +108,20 @@ def main():
 
 	try:
 		import sys
-		method_name = sys.argv[1]
-		outfile = sys.argv[2]
+		method_name = sys.argv[1]		
 	except:
 		print help_message
 		return	
+
+	try:
+		outfile = sys.argv[2]
+	except:
+		outfile = 'roc_out_%s.txt' % method_name
+
+	try:
+		threads = sys.argv[3]
+	except:
+		threads = 4
 
 	if method_name == 'anders':
 		method = computeFrameStateAnders
@@ -134,13 +143,12 @@ def main():
 	if generate_data:
 		start = time.time()
 
-		threads = 4
 		data = []
 		import compute_frame_state	
 		# params = np.append(np.linspace(1e-6,1.0,96), np.linspace(0.5+1e-6,1,20))
 		params = np.linspace(1e-6,1.0,96)
 		if method_name == 'lauge':
-			# fix one parameter
+			# fix one parameter and iterate the other
 			params = [(x, 1.0) for x in params]
 
 		print 'generating data with %d threads. #parameters: %d' % (threads, len(params))
