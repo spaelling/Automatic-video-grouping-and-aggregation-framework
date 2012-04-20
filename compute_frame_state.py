@@ -86,13 +86,14 @@ def computeFrameStateCubic(magnitudes, contrast, p=0.4):
 # 	return states, state_values
 
 
-def computeFrameStateLauge(magnitudes, contrast):
+def computeFrameStateLauge(magnitudes, contrast, p=(0.75, 0.01)):
 	
 	states = []
 	state_values = []
 	
-	contrast_lim = 0.75
-	magnitudes_lim = 0.01
+	x,y = p
+	contrast_lim = x
+	magnitudes_lim = y
 
 	for i in range(0,len(magnitudes)):
 		state_value = max([contrast[i] * (1 / contrast_lim), magnitudes[i] * (1 / magnitudes_lim)])
@@ -118,12 +119,12 @@ def computeFrameStateNaiive(magnitudes, contrast):
 	return states, state_values
 
 
-def computeFrameStateMagnitudeOnly(magnitudes):
+def computeFrameStateMagnitudeOnly(magnitudes, contrast, p=0.45):
 	
 	states = []
 	state_values = []
 
-	magnitudes_lim = 0.45
+	magnitudes_lim = p
 	
 	for i in range(0,len(magnitudes)):
 		state_value = magnitudes[i] * (1 / magnitudes_lim)
@@ -136,12 +137,12 @@ def computeFrameStateMagnitudeOnly(magnitudes):
 	return states, state_values
 
 
-def computeFrameStateContrastOnly(contrast):
+def computeFrameStateContrastOnly(magnitudes, contrast, p=0.72):
 	
 	states = []
 	state_values = []
 
-	contrast_lim = 0.72
+	contrast_lim = p
 	
 	for i in range(0,len(contrast)):
 		state_value = contrast[i] * (1 / contrast_lim)

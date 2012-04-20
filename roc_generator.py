@@ -122,6 +122,12 @@ def main():
 		method = computeFrameStateCubic
 	elif method_name == 'anders2':
 		method = computeFrameStateAnders2
+	elif method_name == 'magnitude':
+		method = computeFrameStateMagnitudeOnly
+	elif method_name == 'contrast':
+		method = computeFrameStateContrastOnly
+	elif method_name == 'lauge':
+		method = computeFrameStateLauge
 
 	filename = outfile
 	generate_data = True
@@ -131,9 +137,11 @@ def main():
 		threads = 4
 		data = []
 		import compute_frame_state	
-		# method = compute_frame_state.computeFrameStateAnders
-		params = np.append(np.linspace(1e-6,0.5,48), np.linspace(0.5+1e-6,1,20))
-		params = np.linspace(1e-6,0.5,4)
+		# params = np.append(np.linspace(1e-6,1.0,96), np.linspace(0.5+1e-6,1,20))
+		params = np.linspace(1e-6,1.0,96)
+		if method_name == 'lauge':
+			# fix one parameter
+			params = [(x, 1.0) for x in params]
 
 		print 'generating data with %d threads. #parameters: %d' % (threads, len(params))
 
@@ -154,7 +162,10 @@ def main():
 
 		#populate queue with data   
 		for p in params:
-			print 'adding: %s(%f)' % (method.__name__, p)
+			if method_name == 'lauge':
+				print 'adding: %s(%f,%f)' % (method.__name__, p[0], p[1])
+			else:
+				print 'adding: %s(%f)' % (method.__name__, p)
 			in_queue.put(p)
 
 		print 'waiting for jobs to complete...'
