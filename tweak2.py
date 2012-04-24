@@ -11,10 +11,11 @@ smoothTriangle = segmenter.smoothTriangle
 
 class Tweak():
 
-	def __init__(self, method, path='./Tweak/'):
+	def __init__(self, method, path='./Tweak/', smoothness_degree=0):
 
 		self.method = method
 		self.path = path
+		self.smoothness_degree = smoothness_degree
 		self.metadatas = []
 		self.answer_datas = []
 
@@ -101,6 +102,9 @@ class Tweak():
 				continue
 			
 			frame_states, frame_values = method(magnitudes, contrast, p)
+			smoothness_degree = self.smoothness_degree
+			if smoothness_degree:
+				frame_states = [round(x) for x in smoothTriangle(frame_states, smoothness_degree)]
 			answer_states = answer_data.get('states')
 
 			# Calculate error

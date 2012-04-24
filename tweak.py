@@ -121,7 +121,7 @@ def main():
 			# elif arg1 == 'algox':
 			# 	frame_states, frame_values = computeFrameStateX(magnitudes, contrast, 5.0, 0.7)
 			elif arg1 == 'lauge':
-				frame_states, frame_values = computeFrameStateLauge(magnitudes, contrast)
+				frame_states, frame_values = computeFrameStateLauge(magnitudes, contrast, (0.01,0.75))
 			elif arg1 == 'naiive':
 				frame_states, frame_values = computeFrameStateNaiive(magnitudes, contrast)
 			elif arg1 == 'magnitude':

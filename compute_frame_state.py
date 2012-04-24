@@ -1,4 +1,6 @@
 import math
+import vid_segmenter as segmenter
+smoothTriangle = segmenter.smoothTriangle
 
 def computeFrameStateAnders(magnitudes, contrast, p=0.015):
 	
@@ -86,14 +88,14 @@ def computeFrameStateCubic(magnitudes, contrast, p=0.4):
 # 	return states, state_values
 
 
-def computeFrameStateLauge(magnitudes, contrast, p=(0.75, 0.01)):
+def computeFrameStateLauge(magnitudes, contrast, p=(0.01, 0.75)):
 	
 	states = []
 	state_values = []
 	
 	x,y = p
-	contrast_lim = x
-	magnitudes_lim = y
+	contrast_lim = y
+	magnitudes_lim = x
 
 	for i in range(0,len(magnitudes)):
 		state_value = max([contrast[i] * (1 / contrast_lim), magnitudes[i] * (1 / magnitudes_lim)])
@@ -107,7 +109,7 @@ def computeFrameStateLauge(magnitudes, contrast, p=(0.75, 0.01)):
 	return states, state_values
 
 
-def computeFrameStateNaiive(magnitudes, contrast):
+def computeFrameStateNaiive(magnitudes, contrast, p=-1):
 	
 	states = []
 	state_values = []
@@ -153,3 +155,6 @@ def computeFrameStateContrastOnly(magnitudes, contrast, p=0.72):
 		state_values.append(state_value)
 		
 	return states, state_values
+
+if __name__ == '__main__':
+    main() 	

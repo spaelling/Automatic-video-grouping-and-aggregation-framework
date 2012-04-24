@@ -26,11 +26,11 @@ from multiprocessing import Process, Pipe
 
 class Worker(threading.Thread):
 
-	def __init__(self, in_queue, out_queue, method):
+	def __init__(self, in_queue, out_queue, method, smoothness_degree=0):
 		threading.Thread.__init__(self)
 
 		self.label = str(method.__name__)
-		self.tweak = tweak2.Tweak(method)
+		self.tweak = tweak2.Tweak(method, smoothness_degree=smoothness_degree)
 		self.in_queue = in_queue
 		self.out_queue = out_queue
 
@@ -85,12 +85,11 @@ computeFrameStateAnders2 = compute_frame_state.computeFrameStateAnders2
 computeFrameStateSquare = compute_frame_state.computeFrameStateSquare
 computeFrameStateCubic = compute_frame_state.computeFrameStateCubic
 computeFrameStateLauge = compute_frame_state.computeFrameStateLauge
-computeFrameStateNaiive = compute_frame_state.computeFrameStateNaiive
 computeFrameStateMagnitudeOnly = compute_frame_state.computeFrameStateMagnitudeOnly
 computeFrameStateContrastOnly = compute_frame_state.computeFrameStateContrastOnly
 
 
-help_message = '''USAGE: roc.py <method> [outfile] [threads]'''
+help_message = '''USAGE: roc.py <method> [outfile] [threads] [#param] [smoothness_degree]'''
 
 def main():
 
@@ -119,9 +118,19 @@ def main():
 		outfile = 'roc_out_%s.txt' % method_name
 
 	try:
-		threads = sys.argv[3]
+		threads = int(sys.argv[3])
 	except:
 		threads = 4
+
+	try:
+		num_params = sys.argv[4]
+	except:
+		num_params = 60
+
+	try:
+		smoothness_degree = int(sys.argv[5])
+	except:
+		smoothness_degree = 0
 
 	if method_name == 'anders':
 		method = computeFrameStateAnders
@@ -146,10 +155,24 @@ def main():
 		data = []
 		import compute_frame_state	
 		# params = np.append(np.linspace(1e-6,1.0,96), np.linspace(0.5+1e-6,1,20))
-		params = np.linspace(1e-6,1.0,96)
+		params = np.linspace(1e-6,1.0,num_params)
 		if method_name == 'lauge':
+			params1 = np.linspace(1e-6,1.0,11)
+			params2 = np.linspace(1e-6,1.0,11)
+			params = []
+			for p1 in params1:
+				for p2 in params2:
+					params.append((p1,p2))
+			# try:
+			# 	fix_param = float(sys.argv[5])
+			# except:
+			# 	print 'must choose a fixed parameter'
+			# 	return
+			# else:
+			# 	print 'fixed parameter at %2.2f' % fix_param
 			# fix one parameter and iterate the other
-			params = [(x, 1.0) for x in params]
+			# magnitude, contrast
+			# params = [(fix_param, x) for x in params]
 
 		print 'generating data with %d threads. #parameters: %d' % (threads, len(params))
 
@@ -159,7 +182,7 @@ def main():
 		#spawn a pool of threads, and pass them queue instance 
 		for i in range(threads):
 			print 'spawning worker #%d' % i
-			t = Worker(in_queue, out_queue, method)
+			t = Worker(in_queue, out_queue, method, smoothness_degree)
 			t.setDaemon(True)
 			t.start()
 

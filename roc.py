@@ -39,43 +39,84 @@ class ROCpt():
 	# true positives rate
 	def tp_rate(self):
 
-		return self.tp / self.positives()
+		if self.positives() > 0:
+			# print self.tp / self.positives()
+			return self.tp / self.positives()
+		else:
+			return 0.0
 
 	# false positives rate
 	def fp_rate(self):
 
-		return self.fp / self.negatives()
+		if self.negatives() > 0:
+			return self.fp / self.negatives()
+		else:
+			return 0.0
 
-	def precision(self):
+	# true negatives rate
+	def tn_rate(self):
 
-		return self.tp / (self.tp + self.fp)
+		if self.negatives() > 0:
+			return self.tn / self.negatives()
+		else:
+			return 0.0
 
-	def recall(self):
+	# false negatives rate
+	def fn_rate(self):
+
+		if self.positives() > 0:
+			return self.fn / self.positives()
+		else:
+			return 0.0			
+
+	def pos_precision(self):
+
+		if (self.tp + self.fp) > 0:
+			return self.tp / (self.tp + self.fp)
+		else:
+			return None
+
+	def pos_recall(self):
 
 		return self.tp_rate()
 
-	def accuracy(self):
+	def neg_precision(self):
 
-		return self.tp / (self.tp + self.fp)
+		if (self.tn + self.fn) > 0:
+			return self.tn / (self.tn + self.fn)
+		else:
+			return None
 
-	def f_measure(self):
+	def neg_recall(self):
 
-		return 2.0 / (1/self.precision() + 1/self.recall())
+		return self.tn_rate()		
+
+	# def accuracy(self):
+
+	# 	return self.tp / (self.tp + self.fp)
+
+	def pos_f_measure(self):
+
+		if self.pos_precision() and self.pos_recall():
+			return 2.0 / (1/self.pos_precision() + 1/self.pos_recall())
+		else:
+			return None
+
+	def neg_f_measure(self):
+
+		if self.neg_precision() and self.neg_recall():
+			return 2.0 / (1/self.neg_precision() + 1/self.neg_recall())
+		else:
+			return None
 
 class ROCPlot():
-	def __init__(self, fig_title='ROC-graph', filename=None, show_legend=True, plot_on=True):
+	def __init__(self, filename=None, show_legend=True, plot_on=True):
 
 		self.show_legend = show_legend
 		self.plot_on = plot_on
 
 		if self.plot_on:
-			pylab.figure(figsize=(10,10))		
-			pylab.suptitle(fig_title, fontsize=16)
-			pylab.plot([0,1],[0,1], ":k")
-			pylab.axis([0,1,0,1])  
-			pylab.xlabel('False positive rate.')
-			pylab.ylabel('True positive rate.')
-			pylab.grid(True)
+			pylab.figure(figsize=(10,10))
 
 		if filename:
 			f = open(filename,'r')
@@ -88,8 +129,15 @@ class ROCPlot():
 			def extract(x):
 				return ROCpt(x.get('tp'), x.get('fp'), x.get('tn'), x.get('fn'), label=x.get('label', ''))
 			rocpts = [extract(x) for x in data]
-			for rocpt in rocpts:
-				self.plot(rocpt)
+			self.plot_positive_rates(rocpts)
+			self.plot_negative_rates(rocpts)
+			self.plot_f_rates2(rocpts)
+
+			# f_measures = [rocpt.f_measure() for rocpt in rocpts]
+			# for f_measure in f_measures:
+			# 	if f_measure:
+			# 		print f_measure
+
 			self.show()
 
 	def show(self):
@@ -99,11 +147,118 @@ class ROCPlot():
 				pylab.legend(loc='best')
 			pylab.show()
 
-	def plot(self, rocpt):
+	def sort(self, data):
+		# sorts the data and return the sorted data + the permutation indices
+		return sorted(data), sorted(range(len(data)), key = data.__getitem__)
+
+	def plot_positive_rates(self, data, label=''):
 
 		if self.plot_on:
-			pylab.plot(rocpt.fp_rate(), rocpt.tp_rate(),"or", label=rocpt.label)
+			if type(data) == type([]):
+				rocpts = data
+				fp_rates, indices = self.sort([rocpt.fp_rate() for rocpt in rocpts])
+				tp_rates = [rocpt.tp_rate() for rocpt in rocpts]
+				tp_rates = [tp_rates[indice] for indice in indices]
+				AUC = np.trapz(tp_rates, fp_rates)
 
+				pylab.subplot(1,3,1, title='Positive Rate, AUC = %2.2f' % AUC)
+				pylab.plot([0,1],[0,1], ":k")
+				pylab.axis([0,1,0,1])  
+				pylab.xlabel('False positive rate.')
+				pylab.ylabel('True positive rate.')
+				pylab.grid(True)
+				pylab.plot(fp_rates, tp_rates,"or", label=label)
+				
+	def plot_negative_rates(self, data, label=''):
+
+		if self.plot_on:
+			if type(data) == type([]):
+				rocpts = data
+				fn_rates, indices = self.sort([rocpt.fn_rate() for rocpt in rocpts])
+				tn_rates = [rocpt.tn_rate() for rocpt in rocpts]
+				tn_rates = [tn_rates[indice] for indice in indices]
+				AUC = np.trapz(tn_rates, fn_rates)
+
+				pylab.subplot(1,3,2, title='Negative Rate, AUC = %2.2f' % AUC)
+				pylab.plot([0,1],[0,1], ":k")
+				pylab.axis([0,1,0,1])  
+				pylab.xlabel('False negative rate.')
+				pylab.ylabel('True negative rate.')
+				pylab.grid(True)
+				pylab.plot(fn_rates, tn_rates,"or", label=label)
+
+	def plot_f_rates(self, data, label=''):
+		
+		if self.plot_on:
+			pylab.subplot(1,3,3, title='F-rates')
+			pylab.axis([0,1,0,1])  
+			pylab.xlabel('Positive F-measure.')
+			pylab.ylabel('Negative F-measure.')
+			pylab.grid(True)
+			if type(data) == type([]):
+				rocpts = data
+				pos_f_measures = [rocpt.pos_f_measure() for rocpt in rocpts]
+				neg_f_measures = [rocpt.neg_f_measure() for rocpt in rocpts]
+				pylab.plot(neg_f_measures, pos_f_measures,"or", label=label)
+
+	def plot_f_rates2(self, data, label=''):
+		
+		if self.plot_on:
+			if type(data) == type([]):
+				rocpts = data
+				def fm1(x):
+					if x.pos_precision() and x.neg_recall():
+						return 2.0 / (1/x.pos_precision() + 1/x.neg_recall())
+					else:
+						return None
+
+				def fm2(x):
+					if x.neg_precision() and x.pos_recall():
+						return 1.0 - 2.0 / (1/x.neg_precision() + 1/x.pos_recall())
+					else:
+						return None
+
+				f1_measures = [fm1(rocpt) for rocpt in rocpts]
+				f2_measures = [fm2(rocpt) for rocpt in rocpts]
+
+				f1m = []
+				f2m = []
+				for i in range(len(f1_measures)):
+					if f1_measures[i] is None or f2_measures[i] is None:
+						pass
+					else:
+						f1m.append(f1_measures[i])
+						f2m.append(f2_measures[i])
+				f1_measures = f1m
+				f2_measures = f2m
+				AUC = -np.trapz(f1_measures, f2_measures)
+
+				pylab.subplot(1,3,3, title='F-rates, AUC = %2.2f' % AUC)
+				pylab.axis([0,1,0,1])  
+				pylab.plot([0,1],[0,1], ":k")
+				pylab.xlabel('F1-measure.')
+				pylab.ylabel('F1-measure.')
+				pylab.grid(True)
+				pylab.plot(f2_measures, f1_measures,"or", label=label)
+
+	def plot_x_rates(self, data, label=''):
+		
+		if self.plot_on:
+			pylab.subplot(1,3,3, title='???')
+			pylab.plot([0,1],[0,1], ":k")
+			pylab.axis([0,1,0,1])  
+			pylab.xlabel('Positive precision.')
+			pylab.ylabel('negative recall.')
+			pylab.grid(True)
+			if type(data) == type([]):
+				rocpts = data
+				# fp_rates = [rocpt.fp_rate() for rocpt in rocpts]
+				# tp_rates = [rocpt.tp_rate() for rocpt in rocpts]
+				# fn_rates = [rocpt.fn_rate() for rocpt in rocpts]
+				tn_rates = [rocpt.tn_rate() for rocpt in rocpts if rocpt.precision() is not None]
+				pp = [rocpt.precision() for rocpt in rocpts if rocpt.precision() is not None]
+				
+				pylab.plot(tn_rates, pp,"or", label=label)			
 
 	def generate_file(self, filename, data):
 
