@@ -110,13 +110,13 @@ class ROCpt():
 			return None
 
 class ROCPlot():
-	def __init__(self, filename=None, show_legend=True, plot_on=True):
+	def __init__(self, filename=None, show_legend=True, plot_on=True, fig_title=''):
 
 		self.show_legend = show_legend
 		self.plot_on = plot_on
 
 		if self.plot_on:
-			pylab.figure(figsize=(10,10))
+			pylab.figure(dpi=100, figsize=(11,7))
 
 		if filename:
 			f = open(filename,'r')
@@ -132,11 +132,6 @@ class ROCPlot():
 			self.plot_positive_rates(rocpts)
 			self.plot_negative_rates(rocpts)
 			self.plot_f_rates2(rocpts)
-
-			# f_measures = [rocpt.f_measure() for rocpt in rocpts]
-			# for f_measure in f_measures:
-			# 	if f_measure:
-			# 		print f_measure
 
 			self.show()
 
@@ -301,7 +296,7 @@ def main():
 		print help_message
 		return
 
-	ROCPlot(filename=filename, show_legend=False)
+	ROCPlot(filename=filename, show_legend=False, fig_title=filename)
 
 if __name__ == '__main__':
     main()

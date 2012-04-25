@@ -151,3 +151,68 @@ class Tweak():
 			negativeRecall = -1
 
 		return truePositives, falsePositives, trueNegatives, falseNegatives
+
+	def fold(self, buckets=5, debug_mode=False):
+
+		metadatas_sorted = sorted(self.metadatas, key=lambda x: len(x['shift_vectors']))
+		# for metadata in metadatas_sorted: print len(metadata['shift_vectors'])
+		if debug_mode:
+			for metadata in metadatas_sorted: print '#frames: ', len(metadata['shift_vectors'])
+		# inspired by: http://code.activestate.com/recipes/439095-iterator-to-return-items-n-at-a-time/
+		def group(iterator, count):
+			itr = iter(iterator)
+			stop = False
+			while not stop:
+				l = []
+				for i in range(count):
+					try:
+						next = itr.next()
+					except StopIteration:
+						# no further items, return what is left
+						stop = True
+						break
+					else:
+						l.append(next)
+				if l:
+					yield tuple(l)
+
+		x1 = []
+		x2 = []
+		x3 = []
+		x4 = []
+		x5 = []
+		for x in list(group(metadatas_sorted, 5)):
+			try:
+				if debug_mode: 
+					print 'adding %d frames to x1' % len(x[0].get('shift_vectors'))
+				x1.append(x[0])
+				if debug_mode: 
+					print 'adding %d frames to x2' % len(x[1].get('shift_vectors'))
+				x2.append(x[1])
+				if debug_mode: 
+					print 'adding %d frames to x3' % len(x[2].get('shift_vectors'))
+				x3.append(x[2])
+				if debug_mode: 
+					print 'adding %d frames to x4' % len(x[3].get('shift_vectors'))
+				x4.append(x[3])
+				if debug_mode: 
+					print 'adding %d frames to x5' % len(x[4].get('shift_vectors'))
+				x5.append(x[4])
+			except IndexError, e:
+				pass
+
+		def get_num_frames(x):
+			z = 0
+			return sum([len(y.get('shift_vectors')) for y in x])
+
+		print '1: %6d frames\n2: %6d frames\n3: %6d frames\n4: %6d frames\n5: %6d frames\n' % (get_num_frames(x1), get_num_frames(x2), get_num_frames(x3), get_num_frames(x4), get_num_frames(x5))
+		
+		return x1,x2,x3,x4,x5
+
+def main():
+	
+	tweak = Tweak(method=None)
+	x1,x2,x3,x4,x5 = tweak.fold(debug_mode=False)
+
+if __name__ == '__main__':
+    main()

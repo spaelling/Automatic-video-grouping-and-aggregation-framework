@@ -19,7 +19,6 @@ computeFrameStateAnders = compute_frame_state.computeFrameStateAnders
 computeFrameStateAnders2 = compute_frame_state.computeFrameStateAnders2
 computeFrameStateSquare = compute_frame_state.computeFrameStateSquare
 computeFrameStateCubic = compute_frame_state.computeFrameStateCubic
-# computeFrameStateX = compute_frame_state.computeFrameStateX
 computeFrameStateLauge = compute_frame_state.computeFrameStateLauge
 computeFrameStateNaiive = compute_frame_state.computeFrameStateNaiive
 computeFrameStateMagnitudeOnly = compute_frame_state.computeFrameStateMagnitudeOnly
