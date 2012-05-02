@@ -7,7 +7,18 @@ import os
 import json
 import pylab
 import vid_segmenter as segmenter
+import os
 smoothTriangle = segmenter.smoothTriangle
+# Find a JSON parser
+try:
+	import json
+    # import simplejson as json    
+except ImportError:
+    try:
+    	import simplejson as json
+        # import json
+    except ImportError:
+    	print 'ERROR: JSON parser not found!'
 
 class Tweak():
 
@@ -18,6 +29,7 @@ class Tweak():
 		self.smoothness_degree = smoothness_degree
 		self.metadatas = []
 		self.answer_datas = []
+		self.videoIDs = []
 
 		self.init()
 
@@ -68,6 +80,9 @@ class Tweak():
 				metadata = json.loads(content)
 				self.metadatas.append(metadata)
 				f.close()
+			else:
+				print 'metadata for %s does not exist' % thisID
+				return
 
 			if answer_exists:
 				f = open(answer_filename,'r')
@@ -77,6 +92,7 @@ class Tweak():
 			else:
 				answer_data = dict(states=[1 for x in metadata.get('shift_vectors')])
 			self.answer_datas.append(answer_data)
+			self.videoIDs.append(thisID)
 
 	def tweak(self, p):
 
@@ -87,21 +103,41 @@ class Tweak():
 			metadata = self.metadatas[i]
 			answer_data = self.answer_datas[i]
 			method = self.method
+			videoID = self.videoIDs[i]
 
 			shift_vectors = metadata['shift_vectors']
 			stand_dev = metadata['stand_dev']
 
 			# degree of smoothness
 			degree = 12
-			
-			try:
-				magnitudes = smoothTriangle((np.array([math.sqrt(x**2 + y**2) for x,y in shift_vectors])**2)/(63**2), degree)	
-				contrast = smoothTriangle((127.5 - np.array(stand_dev)) / 127.5, degree)
-			except IndexError as e:
-				# too little data in segment will cause this error
-				continue
-			
-			frame_states, frame_values = method(magnitudes, contrast, p)
+
+			out_filename = '%s.%s.txt' % (videoID, str(p))
+			path = './DataSet/frame_states/%s' % (method.__name__)
+			out_filename = '%s/%s' % (path, out_filename)
+
+			if os.path.isfile(out_filename):
+				f = open(out_filename,'r')
+				content = f.read()
+				d = json.loads(content)	
+				frame_states = d.get('frame_states', [])
+				frame_values = d.get('frame_values', [])
+			else:
+
+				try:
+					magnitudes = smoothTriangle((np.array([math.sqrt(x**2 + y**2) for x,y in shift_vectors])**2)/(63**2), degree)	
+					contrast = smoothTriangle((127.5 - np.array(stand_dev)) / 127.5, degree)
+				except IndexError as e:
+					# too little data in segment will cause this error
+					continue
+				
+				frame_states, frame_values = method(magnitudes, contrast, p)
+
+				content = json.dumps(dict(frame_states=frame_states, frame_values=frame_values))
+				# write to disc
+				f = open(out_filename,'w')	
+				f.write(content)
+				f.close()
+
 			smoothness_degree = self.smoothness_degree
 			if smoothness_degree:
 				frame_states = [round(x) for x in smoothTriangle(frame_states, smoothness_degree)]

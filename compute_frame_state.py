@@ -19,9 +19,9 @@ def computeFrameStateAnders(magnitudes, contrast, p=0.015):
 	# print 'a: %2.2f, b: %2.2f' % (a,b)
 
 	for i in range(0,len(magnitudes)):
-		state_value = sum([a * contrast[i], b * magnitudes[i]])	
+		state_value = float(sum([a * contrast[i], b * magnitudes[i]]))
 		state_values.append(state_value)		
-	states = [v <= T for v in state_values]
+	states = [int(v <= T) for v in state_values]
 
 	return states, state_values
 
@@ -43,7 +43,7 @@ def computeFrameStateAnders2(magnitudes, contrast, p=0.045):
 	for i in range(0,len(magnitudes)):
 		state_value = sum([a * contrast[i]**3, b * magnitudes[i]**3])**(1.0/3)
 		state_values.append(state_value)		
-	states = [v <= T for v in state_values]
+	states = [int(v <= T) for v in state_values]
 
 	return states, state_values
 
@@ -57,7 +57,7 @@ def computeFrameStateSquare(magnitudes, contrast, p=0.4):
 	for i in range(0,len(magnitudes)):
 		state_value = math.sqrt(contrast[i]**2 + magnitudes[i]**2)
 		state_values.append(state_value)		
-	states = [v <= T for v in state_values]
+	states = [int(v <= T) for v in state_values]
 
 	return states, state_values	
 
@@ -71,7 +71,7 @@ def computeFrameStateCubic(magnitudes, contrast, p=0.4):
 	for i in range(0,len(magnitudes)):
 		state_value = (contrast[i]**3 + magnitudes[i]**3)**(1.0/3.0)
 		state_values.append(state_value)		
-	states = [v <= T for v in state_values]
+	states = [int(v <= T) for v in state_values]
 
 	return states, state_values	
 
@@ -94,8 +94,8 @@ def computeFrameStateLauge(magnitudes, contrast, p=(0.01, 0.75)):
 	state_values = []
 	
 	x,y = p
-	contrast_lim = y
 	magnitudes_lim = x
+	contrast_lim = y
 
 	for i in range(0,len(magnitudes)):
 		state_value = max([contrast[i] * (1 / contrast_lim), magnitudes[i] * (1 / magnitudes_lim)])

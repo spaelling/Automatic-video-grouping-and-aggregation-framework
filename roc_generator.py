@@ -7,6 +7,7 @@ import pylab
 import time
 import datetime
 import roc
+import os
 
 # Find a JSON parser
 try:
@@ -24,13 +25,23 @@ import threading
 import Queue
 from multiprocessing import Process, Pipe
 
+# def get_hash(target):
+
+#     algorithm = 'sha512'
+#     m = hashlib.new(algorithm)
+
+#     hash_string = str(target)
+#     m.update(hash_string)
+    
+#     return m.hexdigest()
+
 class Worker(threading.Thread):
 
 	def __init__(self, in_queue, out_queue, method, smoothness_degree=0):
 		threading.Thread.__init__(self)
 
 		self.label = str(method.__name__)
-		self.tweak = tweak2.Tweak(method, smoothness_degree=smoothness_degree)
+		self.tweak = tweak2.Tweak(method, smoothness_degree=smoothness_degree, path='./Tweak3/')
 		self.in_queue = in_queue
 		self.out_queue = out_queue
 
@@ -125,7 +136,7 @@ def main():
 	try:
 		num_params = sys.argv[4]
 	except:
-		num_params = 60
+		num_params = 100
 
 	try:
 		smoothness_degree = int(sys.argv[5])
@@ -155,10 +166,10 @@ def main():
 		data = []
 		import compute_frame_state	
 		# params = np.append(np.linspace(1e-6,1.0,96), np.linspace(0.5+1e-6,1,20))
-		params = np.linspace(1e-6,1.0,num_params)
+		params = np.linspace(0,1.0,101)[1:]
 		if method_name == 'lauge':
-			params1 = np.linspace(1e-6,1.0,11)
-			params2 = np.linspace(1e-6,1.0,11)
+			params1 = np.linspace(0,1.0,101)[1:] # magnitude
+			params2 = np.linspace(0,1.0,11)[1:] # contrast
 			params = []
 			for p1 in params1:
 				for p2 in params2:
@@ -175,6 +186,11 @@ def main():
 			# params = [(fix_param, x) for x in params]
 
 		print 'generating data with %d threads. #parameters: %d' % (threads, len(params))
+
+
+		path = './DataSet/frame_states/%s' % (method.__name__)
+		if not os.path.exists(path):
+			os.makedirs(path)
 
 		threads = min(threads, len(params))
 		in_queue = Queue.Queue()
