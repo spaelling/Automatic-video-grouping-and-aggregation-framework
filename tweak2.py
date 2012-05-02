@@ -22,7 +22,7 @@ except ImportError:
 
 class Tweak():
 
-	def __init__(self, method, path='./Tweak/', smoothness_degree=0):
+	def __init__(self, method, path='./Tweakfinal/', smoothness_degree=0):
 
 		self.method = method
 		self.path = path
@@ -82,7 +82,7 @@ class Tweak():
 				f.close()
 			else:
 				print 'metadata for %s does not exist' % thisID
-				return
+				continue
 
 			if answer_exists:
 				f = open(answer_filename,'r')

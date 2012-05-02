@@ -41,7 +41,7 @@ class Worker(threading.Thread):
 		threading.Thread.__init__(self)
 
 		self.label = str(method.__name__)
-		self.tweak = tweak2.Tweak(method, smoothness_degree=smoothness_degree, path='./Tweak3/')
+		self.tweak = tweak2.Tweak(method, smoothness_degree=smoothness_degree)
 		self.in_queue = in_queue
 		self.out_queue = out_queue
 
